@@ -19,10 +19,10 @@ Below is an example of an Azure CLI deployment that uses all the defaults, and s
 
 ```BASH
 az deployment sub create \
-  --name myMlzDeployment \
-  --location eastus \
+  --name avdlzDeployment \
+  --location usgovvirginia \
   --template-file ./mlz.bicep \
-  --parameters resourcePrefix=myMlz
+  --parameters resourcePrefix=avdlz
 ```
 
 ## Prerequisites
@@ -256,19 +256,19 @@ To deploy Mission LZ into a single subscription, give your deployment a name and
 ```BASH
 # AZ CLI
 az deployment sub create \
-  --name myMlzDeployment \
-  --location eastus \
+  --name avdlzDeployment \
+  --location usgovvirginia \
   --template-file ./mlz.bicep \
-  --parameters resourcePrefix="myMlz"
+  --parameters resourcePrefix="avdlz"
 ```
 
 ```PowerShell
 # PowerShell
 New-AzSubscriptionDeployment `
-  -Name myMlzDeployment `
-  -Location 'eastus' `
+  -Name avdlzDeployment `
+  -Location 'usgovvirginia' `
   -TemplateFile .\mlz.bicep `
-  -resourcePrefix 'myMlz' 
+  -resourcePrefix 'avdlz' 
 ```
 
 #### Multiple Subscription Deployment
@@ -279,11 +279,11 @@ Deployment to multiple subscriptions requires specifying the subscription IDs fo
 # AZ CLI
 az deployment sub create \
   --subscription $deploymentSubscription \
-  --location eastus \
+  --location usgovvirginia \
   --name multiSubscriptionTest \
   --template-file ./mlz.bicep \
   --parameters \
-      resourcePrefix='myMlz' \
+      resourcePrefix='avdlz' \
       hubSubscriptionId=$hubSubscriptionId \
       identitySubscriptionId=$identitySubscriptionId \
       operationsSubscriptionId=$operationsSubscriptionId \
@@ -293,10 +293,10 @@ az deployment sub create \
 ```PowerShell
 # PowerShell
 New-AzSubscriptionDeployment `
-  -Name myMlzDeployment `
-  -Location 'eastus' `
+  -Name avdlzDeployment `
+  -Location 'usgovvirginia' `
   -TemplateFile .\mlz.bicep `
-  -resourcePrefix "myMlz" `
+  -resourcePrefix "avdlz" `
   -hubSubscriptionId $hubSubscriptionId `
   -identitySubscriptionId $identitySubscriptionId `
   -operationsSubscriptionId $operationsSubscriptionId `
@@ -325,19 +325,19 @@ Connect-AzAccount -Environment AzureUSGovernment
 ```BASH
 # AZ CLI
 az deployment sub create \
-  --name myMlzDeployment \
+  --name avdlzDeployment \
   --location usgovvirginia \
   --template-file ./mlz.bicep \
-  --parameters resourcePrefix=myMlz
+  --parameters resourcePrefix=avdlz
 ```
 
 ```PowerShell
 # PowerShell
 New-AzSubscriptionDeployment `
-  -Name myMlzDeployment `
+  -Name avdlzDeployment `
   -Location 'usgovvirginia' `
   -TemplateFile .\mlz.bicep `
-  -resourcePrefix 'myMlz'
+  -resourcePrefix 'avdlz'
 ```
 
 #### Air-Gapped Clouds
