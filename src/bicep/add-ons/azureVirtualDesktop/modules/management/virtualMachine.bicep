@@ -3,46 +3,38 @@ param azurePowerShellModuleMsiName string
 param deploymentUserAssignedIdentityClientId string
 param deploymentUserAssignedIdentityResourceId string
 param diskEncryptionSetResourceId string
-param diskNamePrefix string
+param diskName string
 param diskSku string
 @secure()
 param domainJoinPassword string
 param domainJoinUserPrincipalName string
 param domainName string
+param hostPoolName string
 param location string
-param networkInterfaceNamePrefix string
-param networkName string
+param mlzTags object
+param networkInterfaceName string
 param organizationalUnitPath string
-param securityLogAnalyticsWorkspaceResourceId string
-param serviceName string
+param resourceGroupControlPlane string
 param subnet string
-param tagsNetworkInterfaces object
-param tagsVirtualMachines object
+param tags object
 param timestamp string = utcNow('yyyyMMddhhmmss')
 param virtualNetwork string
 param virtualNetworkResourceGroup string
-param virtualMachineMonitoringAgent string
-param virtualMachineNamePrefix string
+param virtualMachineName string
 @secure()
 param virtualMachinePassword string
 param virtualMachineUsername string
 
-var networkInterfaceName = replace(networkInterfaceNamePrefix, serviceName, 'mgt-vm')
-var securitylogAnalyticsWorkspaceName = securityMonitoring ? split(securityLogAnalyticsWorkspaceResourceId, '/')[8] : ''
-var securityLogAnalyticsWorkspaceResourceGroupName = securityMonitoring ? split(securityLogAnalyticsWorkspaceResourceId, '/')[4] : resourceGroup().name
-var securityLogAnalyticsWorkspaceSubscriptionId = securityMonitoring ? split(securityLogAnalyticsWorkspaceResourceId, '/')[2] : subscription().subscriptionId
-var securityMonitoring = empty(securityLogAnalyticsWorkspaceResourceId) ? false : true
-var virtualMachineName = replace(replace(virtualMachineNamePrefix, serviceName, 'mgt'), networkName, '')
-
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = if (securityMonitoring) {
-  scope: resourceGroup(securityLogAnalyticsWorkspaceSubscriptionId, securityLogAnalyticsWorkspaceResourceGroupName)
-  name: securitylogAnalyticsWorkspaceName
-}
+var tagsVirtualMachines = union({
+  'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
+}, contains(tags, 'Microsoft.Compute/virtualMachines') ? tags['Microsoft.Compute/virtualMachines'] : {}, mlzTags)
 
 resource networkInterface 'Microsoft.Network/networkInterfaces@2020-05-01' = {
   name: networkInterfaceName
   location: location
-  tags: tagsNetworkInterfaces
+  tags: union({
+    'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
+  }, contains(tags, 'Microsoft.Network/networkInterfaces') ? tags['Microsoft.Network/networkInterfaces'] : {}, mlzTags)
   properties: {
     ipConfigurations: [
       {
@@ -88,7 +80,7 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-11-01' = {
           }
           storageAccountType: diskSku
         }
-        name: replace(diskNamePrefix, serviceName, 'mgt-vm')
+        name: diskName
       }
       dataDisks: []
     }
@@ -187,28 +179,6 @@ resource extension_GuestAttestation 'Microsoft.Compute/virtualMachines/extension
   }
 }
 
-resource extension_MicrosoftMonitoringAgent 'Microsoft.Compute/virtualMachines/extensions@2021-03-01' = if (securityMonitoring && virtualMachineMonitoringAgent == 'LogAnalyticsAgent') {
-  parent: virtualMachine
-  name: 'MicrosoftmonitoringAgent'
-  location: location
-  tags: tagsVirtualMachines
-  properties: {
-    publisher: 'Microsoft.EnterpriseCloud.monitoring'
-    type: 'MicrosoftmonitoringAgent'
-    typeHandlerVersion: '1.0'
-    autoUpgradeMinorVersion: true
-    settings: {
-      workspaceId: securityMonitoring ? logAnalyticsWorkspace.properties.customerId : null
-    }
-    protectedSettings: {
-      workspaceKey: securityMonitoring ? listKeys(securityLogAnalyticsWorkspaceResourceId, '2021-06-01').primarySharedKey : null
-    }
-  }
-  dependsOn: [
-    extension_IaasAntimalware
-  ]
-}
-
 module extension_CustomScriptExtension '../common/customScriptExtensions.bicep' = {
   name: 'CSE_InstallAzurePowerShellAzModule_${timestamp}'
   params: {
@@ -224,7 +194,7 @@ module extension_CustomScriptExtension '../common/customScriptExtensions.bicep' 
     userAssignedIdentityClientId: deploymentUserAssignedIdentityClientId
   }
   dependsOn: [
-    extension_MicrosoftMonitoringAgent
+    extension_IaasAntimalware
   ]
 }
 

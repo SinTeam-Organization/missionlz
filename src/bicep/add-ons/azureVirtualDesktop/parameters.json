@@ -27,10 +27,10 @@
             "value": "cdcfb416-e2fe-41e2-be12-33813c1cd427"
         },
         "avdPrivateDnsZoneResourceId": {
-            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-net-d-eu/providers/Microsoft.Network/privateDnsZones/privatelink.wvd.microsoft.com"
+            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-us-p-gov/providers/Microsoft.Network/privateDnsZones/privatelink.wvd.microsoft.com"
         },
         "azureFilesPrivateDnsZoneResourceId": {
-            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-net-d-eu/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net"
+            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-us-p-gov/providers/Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net"
         },
         "azurePowerShellModuleMsiName": {
             "value": "Az-Cmdlets-10.2.0.37547-x64.msi"
@@ -64,7 +64,7 @@
             }
         },
         "domainName": {
-            "value": "jasonmasten.com"
+            "value": "ccthis.us"
         },
         "drainMode": {
             "value": true
@@ -82,7 +82,7 @@
             "value": "AzureFiles Premium"
         },
         "globalWorkspacePrivateDnsZoneResourceId": {
-            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-net-d-eu/providers/Microsoft.Network/privateDnsZones/privatelink-global.wvd.microsoft.com"
+            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-us-p-gov/providers/Microsoft.Network/privateDnsZones/privatelink-global.wvd.microsoft.com"
         },
         "hostPoolPublicNetworkAccess": {
             "value": "Enabled"
@@ -183,7 +183,7 @@
             "value": "10.0.8.0/24"
         },
         "subnetResourceId": {
-            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-net-d-eu/providers/Microsoft.Network/virtualNetworks/vnet-net-d-eu/subnets/Clients"
+            "value": "/subscriptions/3764b123-4849-4395-8e6e-ca6d68d8d4b4/resourceGroups/rg-us-p-gov/providers/Microsoft.Network/virtualNetworks/vnet-net-d-eu/subnets/Clients"
         },
         "tags": {
             "value": {}

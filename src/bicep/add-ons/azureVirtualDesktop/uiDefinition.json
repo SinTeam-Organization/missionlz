@@ -15,8 +15,8 @@
               "options": {
                 "text": "The Azure Virtual Desktop (AVD) add-on reduces the complexity in deploying AVD with SCCA and zero trust compliance. Click on the link below to learn more about the solution.",
                 "link": {
-                  "label": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azureVirtualDesktop/README.md",
-                  "uri": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azureVirtualDesktop/README.md"
+                  "label": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azure-virtual-desktop/README.md",
+                  "uri": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azure-virtual-desktop/README.md"
                 }
               }
             },
@@ -79,7 +79,7 @@
                   "type": "Microsoft.Solutions.ArmApiControl",
                   "request": {
                     "method": "GET",
-                    "path": "[concat(steps('basics').hub.subscription, '/providers/Microsoft.Network/azureFirewalls?api-version=2023-05-01')]"
+                    "path": "[concat(steps('basics').hub.subscription, '/resourceGroups/', first(skip(split(steps('basics').hub.virtualNetwork, '/'), 4)), '/providers/Microsoft.Network/azureFirewalls?api-version=2023-09-01')]"
                   }
                 },
                 {
@@ -108,8 +108,8 @@
                   "options": {
                     "text": "The values selected below will be used as components in your naming convention to name your Azure resource groups and resources. For more information on the naming convention used in this solution, refer to the documentation.",
                     "link": {
-                      "label": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azureVirtualDesktop/docs/design/naming.md",
-                      "uri": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azureVirtualDesktop/docs/design/naming.md"
+                      "label": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azure-virtual-desktop/docs/design/naming.md",
+                      "uri": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azure-virtual-desktop/docs/design/naming.md"
                     }
                   }
                 },
@@ -208,11 +208,35 @@
               ]
             },
             {
-              "name": "servicePrincipalApi",
+              "name": "servicePrincipalsApi",
               "type": "Microsoft.Solutions.GraphApiControl",
               "request": {
                 "method": "GET",
                 "path": "/v1.0/serviceprincipals?$filter=appId eq '9cdead84-a844-4324-93f2-b2e6bb768d07'"
+              }
+            },
+            {
+              "name": "networkWatchersApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat(steps('basics').scope.subscription.id, '/providers/Microsoft.Network/networkWatchers?api-version=2023-09-01')]"
+              }
+            },
+            {
+              "name": "operationsLogAnalyticsWorkspaceApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat('subscriptions/', first(skip(split(first(map(filter(first(map(filter(steps('basics').hub.virtualNetworksApi.value, (item) => equals(item.id, steps('basics').hub.virtualNetwork)), (item) => item.properties.virtualNetworkPeerings)), (item) => contains(item.properties.remoteVirtualNetwork.id, 'operations')), (item) => item.properties.remoteVirtualNetwork.id)), '/'), 2)), '/resourcegroups/', first(skip(split(first(map(filter(first(map(filter(steps('basics').hub.virtualNetworksApi.value, (item) => equals(item.id, steps('basics').hub.virtualNetwork)), (item) => item.properties.virtualNetworkPeerings)), (item) => contains(item.properties.remoteVirtualNetwork.id, 'operations')), (item) => item.properties.remoteVirtualNetwork.id)), '/'), 4)), '/providers/Microsoft.OperationalInsights/workspaces?api-version=2023-09-01')]"
+              }
+            },
+            {
+              "name": "sharedServicesSubnetsApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat(first(map(filter(first(map(filter(steps('basics').hub.virtualNetworksApi.value, (item) => equals(item.id, steps('basics').hub.virtualNetwork)), (item) => item.properties.virtualNetworkPeerings)), (item) => contains(item.properties.remoteVirtualNetwork.id, 'sharedServices')), (item) => item.properties.remoteVirtualNetwork.id)), '/subnets?api-version=2022-05-01')]"
               }
             }
           ]
@@ -400,27 +424,6 @@
                       }
                     ]
                   }
-                },
-                {
-                  "name": "subnetsApi",
-                  "type": "Microsoft.Solutions.ArmApiControl",
-                  "request": {
-                    "method": "GET",
-                    "path": "[concat(steps('basics').hub.virtualNetwork, '/subnets?api-version=2022-05-01')]"
-                  }
-                },
-                {
-                  "name": "subnet",
-                  "type": "Microsoft.Common.DropDown",
-                  "visible": true,
-                  "label": "Hub subnet (global)",
-                  "defaultValue": "[first(map(filter(steps('controlPlane').workspace.subnetsApi.value, (item) => and(and(not(equals(item.name, 'AzureFirewallSubnet')), not(equals(item.name, 'AzureFirewallManagementSubnet'))), not(equals(item.name, 'AzureBastionSubnet')))), (item) => item.name))]",
-                  "filter": true,
-                  "toolTip": "Select the existing Hub subnet for the AVD Global Workspace.",
-                  "constraints": {
-                    "required": true,
-                    "allowedValues": "[map(steps('controlPlane').workspace.subnetsApi.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]"
-                  }
                 }
               ]
             },
@@ -514,7 +517,7 @@
               "name": "friendlyNames",
               "type": "Microsoft.Common.Section",
               "label": "Friendly Names for AVD Client",
-              "visible": "[not(equals(steps('basics').scenario.profile, 'arcGisPro'))]",
+              "visible": true,
               "elements": [
                 {
                   "name": "custom",
@@ -633,6 +636,27 @@
                   "constraints": {
                     "required": true
                   }
+                },
+                {
+                  "name": "versionsApi",
+                  "type": "Microsoft.Solutions.ArmApiControl",
+                  "request": {
+                    "method": "GET",
+                    "path": "[concat(steps('hosts').image.galleryImage.id, '/versions?api-version=2023-07-03')]"
+                  }
+                },
+                {
+                  "name": "version",
+                  "type": "Microsoft.Common.DropDown",
+                  "label": "Version",
+                  "defaultValue": "[first(map(steps('hosts').image.versionsApi.value, (item) => item.name))]",
+                  "filter": true,
+                  "toolTip": "Select the desired gallery image version.",
+                  "constraints": {
+                    "allowedValues": "[map(steps('hosts').image.versionsApi.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                    "required": true
+                  },
+                  "visible": "[equals(steps('hosts').image.source, 'gallery')]"
                 }
               ]
             },
@@ -739,7 +763,17 @@
                       "Standard_NV4as_v4",
                       "Standard_NV8as_v4",
                       "Standard_NV16as_v4",
-                      "Standard_NV32as_v4"
+                      "Standard_NV32as_v4",
+                      "Standard_NC4as_T4_v3",
+                      "Standard_NC8as_T4_v3",
+                      "Standard_NC16as_T4_v3",
+                      "Standard_NC64as_T4_v3",
+                      "Standard_NV6ads_A10_v5",
+                      "Standard_NV12ads_A10_v5",
+                      "Standard_NV18ads_A10_v5",
+                      "Standard_NV36adms_A10_v5",
+                      "Standard_NV36ads_A10_v5",
+                      "Standard_NV72ads_A10_v5"
                     ],
                     "numAvailabilityZonesRequired": "[if(equals(steps('hosts').virtualMachine.availability, 'AvailabilityZones'), 3, 1)]"
                   },
@@ -1096,14 +1130,6 @@
                       }
                     ]
                   }
-                },
-                {
-                  "name": "disableBgpRoutePropagation",
-                  "type": "Microsoft.Common.CheckBox",
-                  "visible": true,
-                  "label": "Disable BGP route propagation",
-                  "defaultValue": true,
-                  "toolTip": "Choose whether to disable BGP route propagation on the route table."
                 }
               ]
             },
@@ -1206,7 +1232,7 @@
               "name": "startVmOnConnect",
               "type": "Microsoft.Common.Section",
               "label": "Start VM On Connect",
-              "visible": "[empty(steps('basics').servicePrincipalApi)]",
+              "visible": "[empty(steps('basics').servicePrincipalsApi)]",
               "elements": [
                 {
                   "name": "objectId",
@@ -1402,23 +1428,6 @@
                       }
                     ]
                   }
-                },
-                {
-                  "name": "enableSecurity",
-                  "type": "Microsoft.Common.CheckBox",
-                  "visible": "[and(steps('management').monitoring.enable, equals(steps('management').monitoring.agent, 'LogAnalyticsAgent'))]",
-                  "label": "Multi-home agent for security monitoring?",
-                  "defaultValue": false,
-                  "toolTip": "Deploy the required configuration to multi-home the Microsoft Monitoring Agent for security monitoring."
-                },
-                {
-                  "name": "logAnalyticsWorkspace",
-                  "type": "Microsoft.Solutions.ResourceSelector",
-                  "label": "Existing Log Analytics Workspace for Security",
-                  "visible": "[and(and(steps('management').monitoring.enable, equals(steps('management').monitoring.agent, 'LogAnalyticsAgent')),steps('management').monitoring.enableSecurity)]",
-                  "resourceType": "Microsoft.OperationalInsights/workspaces",
-                  "toolTip": "Select the log analytics workspace used for collecting security data for Sentinel or Defender for Cloud. This is required to multihome the Microsoft Monitoring Agent.",
-                  "options": {}
                 }
               ]
             }
@@ -1494,7 +1503,7 @@
                   "name": "avdAgentMsiName",
                   "type": "Microsoft.Common.TextBox",
                   "label": "Azure Virtual Desktop Agent (.msi)",
-                  "defaultValue": "Microsoft.RDInfra.RDAgent.Installer-x64-1.0.7909.2600.msi",
+                  "defaultValue": "Microsoft.RDInfra.RDAgent.Installer-x64-1.0.8431.2300.msi",
                   "toolTip": "Input the file / blob name for the AVD Agent installer.",
                   "placeholder": "",
                   "multiLine": false,
@@ -1513,7 +1522,7 @@
                   "name": "avdAgentBootLoaderMsiName",
                   "type": "Microsoft.Common.TextBox",
                   "label": "Azure Virtual Desktop Boot Loader (.msi)",
-                  "defaultValue": "Microsoft.RDInfra.RDAgentBootLoader.Installer-x64 (5).msi",
+                  "defaultValue": "Microsoft.RDInfra.RDAgentBootLoader.Installer-x64-1.0.8925.0.msi",
                   "toolTip": "Input the file / blob name for the AVD Boot Loader installer.",
                   "placeholder": "",
                   "multiLine": false,
@@ -1555,12 +1564,161 @@
                     "style": "Warning",
                     "text": "The files listed above are prerequisites for this solution. They must be downloaded and staged in Azure Blob storage. Once staged, ensure the file names listed above match the file names in Azure Blob storage since the names can change over time. Refer to the following link to download the files:",
                     "uri": {
-                      "text": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azureVirtualDesktop/docs/prerequisites.md#required",
-                      "value": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azureVirtualDesktop/docs/prerequisites.md#required"
+                      "text": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azure-virtual-desktop/docs/prerequisites.md#required",
+                      "value": "https://github.com/Azure/missionlz/blob/main/src/bicep/add-ons/azure-virtual-desktop/docs/prerequisites.md#required"
                     }
                   }
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "compliance",
+          "label": "Compliance",
+          "elements": [
+            {
+              "name": "defenderForCloud",
+              "label": "Defender for Cloud",
+              "type": "Microsoft.Common.Section",
+              "elements": [
+                {
+                  "name": "workspaceSettingsApi",
+                  "type": "Microsoft.Solutions.ArmApiControl",
+                  "request": {
+                    "method": "GET",
+                    "path": "[concat(steps('basics').scope.subscription.id, '/providers/Microsoft.Security/workspaceSettings?api-version=2017-08-01-preview')]"
+                  }
+                },
+                {
+                  "name": "deployDefender",
+                  "type": "Microsoft.Common.CheckBox",
+                  "label": "Enable Defender for Cloud?",
+                  "toolTip": "Check here to to deploy defender for cloud to the target subscription.",
+                  "constraints": {
+                    "required": false
+                  }
+                },
+                {
+                  "name": "emailSecurityContact",
+                  "type": "Microsoft.Common.TextBox",
+                  "label": "Email Address for Security Notifications",
+                  "defaultValue": "",
+                  "toolTip": "Please enter a valid email address for the security team.",
+                  "constraints": {
+                    "required": true,
+                    "regex": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$",
+                    "validationMessage": "Email is not valid. Please re-enter."
+                  },
+                  "visible": "[steps('compliance').defenderForCloud.deployDefender]"
+                }
+              ]
+            },
+            {
+              "name": "policySection",
+              "label": "Azure Policy",
+              "type": "Microsoft.Common.Section",
+              "elements": [
+                {
+                  "name": "policySubsetDetailsTextBlock",
+                  "type": "Microsoft.Common.TextBlock",
+                  "options": {
+                    "text": "Mission Landing Zone comes bundled with a relevant subset of available Azure policies."
+                  }
+                },
+                {
+                  "name": "policyOptionalTextBlock",
+                  "type": "Microsoft.Common.TextBlock",
+                  "options": {
+                    "text": "Enabling policies is optional, but recommended."
+                  }
+                },
+                {
+                  "name": "deployPolicy",
+                  "type": "Microsoft.Common.CheckBox",
+                  "label": "Deploy policy assignments?",
+                  "toolTip": "Check here to create policy assignments for the resources created by Mission Landing Zone.",
+                  "constraints": {
+                    "required": false
+                  }
+                },
+                {
+                  "name": "policy",
+                  "type": "Microsoft.Common.DropDown",
+                  "label": "Policy Assignment",
+                  "placeholder": "",
+                  "defaultValue": "NIST SP 800-53",
+                  "toolTip": "DoD IL5 is only available in AzureUsGovernment and will switch to NISTRev4 if tried in AzureCloud.",
+                  "multiselect": false,
+                  "selectAll": false,
+                  "filter": true,
+                  "filterPlaceholder": "Filter items ...",
+                  "multiLine": true,
+                  "defaultDescription": "Select one of the bundled built-in policy assignments.",
+                  "constraints": {
+                    "allowedValues": [
+                      {
+                        "label": "NIST SP 800-53 Rev4",
+                        "description": "The US National Institute of Standards and Technology (NIST) publishes a catalog of security and privacy controls, Special Publication (SP) 800-53, for all federal information systems in the United States (except those related to national security).",
+                        "value": "NISTRev4"
+                      },
+                      {
+                        "label": "NIST SP 800-53 Rev5",
+                        "description": "The US National Institute of Standards and Technology (NIST) publishes a catalog of security and privacy controls, Special Publication (SP) 800-53, for all federal information systems in the United States (except those related to national security).",
+                        "value": "NISTRev5"
+                      },
+                      {
+                        "label": "DoD IL5",
+                        "description": "The Defense Information Systems Agency (DISA) is an agency of the US Department of Defense (DoD) that is responsible for developing and maintaining the DoD Cloud Computing Security Requirements Guide (SRG). These policies are only available for AzureUsGovernment and will switch to NISTRev4 if tried in AzureCloud.",
+                        "value": "IL5"
+                      },
+                      {
+                        "label": "CMMC",
+                        "description": "The Cybersecurity Maturity Model Certification (CMMC) is a new framework developed by the US Department of Defense (DoD) that requires formal third-party audits of defense industrial base (DIB) contractor cybersecurity practices.",
+                        "value": "CMMC"
+                      }
+                    ]
+                  },
+                  "visible": "[steps('compliance').policySection.deployPolicy]"
+                }
+              ]
+            },
+            {
+              "name": "virtualNetworkApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat(steps('basics').hub.virtualNetwork, '?api-version=2023-09-01')]"
+              }
+            },
+            {
+              "name": "logAnalyticsWorkspacesApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat('/subscriptions/', first(skip(split(first(map(filter(steps('compliance').virtualNetworkApi.properties.virtualNetworkPeerings, (item) => contains(item.properties.remoteVirtualNetwork.id, 'operations')), (item) => item.properties.remoteVirtualNetwork.id)), '/'), 2)), '/resourcegroups/', first(skip(split(first(map(filter(steps('compliance').virtualNetworkApi.properties.virtualNetworkPeerings, (item) => contains(item.properties.remoteVirtualNetwork.id, 'operations')), (item) => item.properties.remoteVirtualNetwork.id)), '/'), 4)), '/providers/Microsoft.OperationalInsights/workspaces?api-version=2023-09-01')]"
+              }
+            },
+            {
+              "name": "logAnalyticsWorkspace",
+              "type": "Microsoft.Common.DropDown",
+              "visible": true,
+              "label": "Existing Log Analytics Workspace for Central Logging",
+              "defaultValue": "[first(map(steps('compliance').logAnalyticsWorkspacesApi.value, (item) => item.name))]",
+              "filter": true,
+              "toolTip": "Select the existing Hub Azure firewall.",
+              "constraints": {
+                "required": true,
+                "allowedValues": "[map(steps('compliance').logAnalyticsWorkspacesApi.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]"
+              }
+            },
+            {
+              "name": "diagnosticSettingsApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat(steps('basics').scope.subscription.id, '/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview')]"
+              }
             }
           ]
         },
@@ -1606,17 +1764,22 @@
         "availability": "[steps('hosts').virtualMachine.availability]",
         "avdAgentMsiName": "[steps('artifacts').files.avdAgentMsiName.blobName]",
         "avdAgentBootLoaderMsiName": "[steps('artifacts').files.avdAgentBootLoaderMsiName.blobName]",
-        "avdObjectId": "[if(empty(steps('basics').servicePrincipalApi), steps('management').startVmOnConnect.objectId, first(map(steps('basics').servicePrincipalApi.value, (item) => item.id)))]",
+        "avdObjectId": "[if(empty(steps('basics').servicePrincipalsApi), steps('management').startVmOnConnect.objectId, first(map(steps('basics').servicePrincipalsApi.value, (item) => item.id)))]",
         "azurePowerShellModuleMsiName": "[steps('artifacts').files.azurePowerShellModuleMsiName.blobName]",
         "azureNetAppFilesSubnetAddressPrefix": "[if(and(equals(steps('basics').scope.location.name, steps('controlPlane').controlPlane.location), equals(steps('userProfiles').storage.service, 'AzureNetAppFiles')), steps('networking').controlPlane.subnetAddressCidrRangeAnf, steps('networking').hosts.subnetAddressCidrRangeAnf)]",
         "customRdpProperty": "[steps('controlPlane').hostPool.customRdpProperties]",
+        "deployActivityLogDiagnosticSetting": "[empty(steps('compliance').diagnosticSettingsApi.value)]",
+        "deployDefender": "[and(steps('compliance').defenderForCloud.deployDefender, empty(steps('compliance').defenderForCloud.workspaceSettingsApi.value))]",
+        "deployNetworkWatcherControlPlane": "[empty(filter(steps('basics').networkWatchersApi.value, (item) => equals(item.location, steps('controlPlane').controlPlane.location)))]",
+        "deployNetworkWatcherVirtualMachines": "[empty(filter(steps('basics').networkWatchersApi.value, (item) => equals(item.location, steps('basics').scope.location.name)))]",
+        "deployPolicy": "[steps('compliance').policySection.deployPolicy]",
         "desktopFriendlyName": "[steps('controlPlane').friendlyNames.desktop]",
-        "disableBgpRoutePropagation": "[steps('networking').controlPlane.disableBgpRoutePropagation]",
         "diskSku": "[if(equals(steps('basics').scenario.profile, 'arcGisPro'), 'Premium_LRS', steps('hosts').virtualMachine.diskSku)]",
         "domainJoinPassword": "[steps('hosts').domainJoinCredentials.password]",
         "domainJoinUserPrincipalName": "[steps('hosts').domainJoinCredentials.userPrincipalName]",
         "domainName": "[steps('hosts').identity.domainName]",
         "drainMode": "[steps('management').drainMode.enable]",
+        "emailSecurityContact": "[if(and(steps('compliance').defenderForCloud.deployDefender, empty(steps('compliance').defenderForCloud.workspaceSettingsApi.value)), steps('compliance').defenderForCloud.emailSecurityContact, '')]",
         "environmentAbbreviation": "[steps('basics').naming.environment]",
         "fslogixShareSizeInGB": "[if(equals(steps('userProfiles').profileSolution, 'local'), 100, steps('userProfiles').storage.fileShareSize)]",
         "fslogixContainerType": "[steps('userProfiles').storage.fslogixContainerType]",
@@ -1624,19 +1787,20 @@
         "hostPoolPublicNetworkAccess": "[steps('controlPlane').hostPool.publicNetworkAccess]",
         "hostPoolType": "[if(equals(steps('controlPlane').hostPool.type, 'Pooled'), 'Pooled DepthFirst', 'Personal Automatic')]",
         "hubAzureFirewallResourceId": "[steps('basics').hub.azureFirewall]",
-        "hubSubnetResourceId": "[steps('controlPlane').workspace.subnet]",
         "hubVirtualNetworkResourceId": "[steps('basics').hub.virtualNetwork]",
         "identifier": "[steps('basics').naming.identifier]",
-        "imageDefinitionResourceId": "[if(equals(steps('hosts').image.source, 'gallery'), steps('hosts').image.galleryImage.id, '')]",
         "imageOffer": "[steps('hosts').image.offer]",
         "imagePublisher": "MicrosoftWindowsDesktop",
         "imageSku": "[steps('hosts').image.sku]",
+        "imageVersionResourceId": "[if(equals(steps('hosts').image.source, 'gallery'), steps('hosts').image.version, '')]",
         "locationControlPlane": "[steps('controlPlane').controlPlane.location]",
         "locationVirtualMachines": "[steps('basics').scope.location.name]",
         "logAnalyticsWorkspaceRetention": 30,
         "logAnalyticsWorkspaceSku": "PerGB2018",
         "monitoring": "[steps('management').monitoring.enable]",
+        "operationsLogAnalyticsWorkspaceResourceId": "[first(map(steps('basics').operationsLogAnalyticsWorkspaceApi.value, (item) => item.id))]",
         "organizationalUnitPath": "[if(equals(steps('hosts').identity.solution, 'MicrosoftEntraId'), '', steps('hosts').identity.ouPath)]",
+        "policy": "[steps('compliance').policySection.policy]",
         "recoveryServices": "[steps('management').backup.recoveryServices]",
         "scalingBeginPeakTime": "[if(steps('management').scaling.enable, steps('management').scaling.beginPeakTime, '9:00')]",
         "scalingEndPeakTime": "[if(steps('management').scaling.enable, steps('management').scaling.endPeakTime, '17:00')]",
@@ -1644,10 +1808,10 @@
         "scalingMinimumNumberOfRdsh": "[if(steps('management').scaling.enable, steps('management').scaling.minimumHosts, '0')]",
         "scalingSessionThresholdPerCPU": "[if(steps('management').scaling.enable, steps('management').scaling.cpuThreshold, '1')]",
         "scalingTool": "[steps('management').scaling.enable]",
-        "securityLogAnalyticsWorkspaceResourceId": "[if(steps('management').monitoring.enableSecurity, steps('management').monitoring.logAnalyticsWorkspace.id, '')]",
         "securityPrincipals": "[if(empty(steps('controlPlane').assignment.groupsApi), steps('controlPlane').assignment.groupsGrid, steps('controlPlane').assignment.groupsDropDown)]",
         "sessionHostCount": "[steps('hosts').virtualMachine.count]",
         "sessionHostIndex": 0,
+        "sharedServicesSubnetResourceId": "[first(map(steps('basics').sharedServicesSubnetsApi.value, (item) => item.id))]",
         "stampIndex": "[steps('basics').naming.stampIndex]",
         "storageCount": "[if(equals(steps('userProfiles').profileSolution, 'local'), 0, if(empty(steps('controlPlane').assignment.groupsApi), length(steps('controlPlane').assignment.groupsGrid), length(steps('controlPlane').assignment.groupsDropDown)))]",
         "storageIndex": 0,

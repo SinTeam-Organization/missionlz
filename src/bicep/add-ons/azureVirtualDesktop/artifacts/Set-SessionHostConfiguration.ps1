@@ -58,18 +58,6 @@ Param(
 
     [parameter(Mandatory)]
     [string]
-    $SecurityMonitoring,
-
-    [parameter(Mandatory)]
-    [string]
-    $SecurityWorkspaceId,
-
-    [parameter(Mandatory)]
-    [string]
-    $SecurityWorkspaceKey,
-
-    [parameter(Mandatory)]
-    [string]
     $StorageAccountPrefix,
 
     [parameter(Mandatory)]
@@ -86,7 +74,11 @@ Param(
 
     [parameter(Mandatory)]
     [string]
-    $StorageSuffix
+    $StorageSuffix,
+
+    [parameter(Mandatory)]
+    [string]
+    $UniqueToken
 )
 
 
@@ -216,10 +208,10 @@ try
             'AzureFiles' {
                 for($i = $StorageIndex; $i -lt $($StorageIndex + $StorageCount); $i++)
                 {
-                    $CloudCacheOfficeContainers += 'type=smb,connectionString=\\' + $StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $FilesSuffix + '\office-containers;'
-                    $CloudCacheProfileContainers += 'type=smb,connectionString=\\' + $StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $FilesSuffix + '\profile-containers;'
-                    $OfficeContainers += '\\' + $StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $FilesSuffix + '\office-containers'
-                    $ProfileContainers += '\\' + $StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $FilesSuffix + '\profile-containers'
+                    $CloudCacheOfficeContainers += 'type=smb,connectionString=\\' + $($StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $UniqueToken).Substring(0,24) + $FilesSuffix + '\office-containers;'
+                    $CloudCacheProfileContainers += 'type=smb,connectionString=\\' + $($StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $UniqueToken).Substring(0,24) + $FilesSuffix + '\profile-containers;'
+                    $OfficeContainers += '\\' + $($StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $UniqueToken).Substring(0,24) + $FilesSuffix + '\office-containers'
+                    $ProfileContainers += '\\' + $($StorageAccountPrefix + $i.ToString().PadLeft(2,'0') + $UniqueToken).Substring(0,24) + $FilesSuffix + '\profile-containers'
                 }
             }
             'AzureNetAppFiles' {
@@ -494,25 +486,6 @@ try
     Write-Log -Message 'Installed AVD Agent' -Type 'INFO'
     Start-Sleep -Seconds 5 | Out-Null
 
-
-    ##############################################################
-    #  Dual-home Microsoft Monitoring Agent for Azure Sentinel or Defender for Cloud
-    ##############################################################
-    if($SecurityMonitoring -eq 'true')
-    {
-        $AzureEnvironment = switch($Environment)
-        {
-            AzureCloud {0}
-            AzureUSGovernment {1}
-            AzureChina {2}
-            USNat {3}
-            USSec {4}
-        }
-
-        $mma = New-Object -ComObject 'AgentConfigManager.MgmtSvcCfg'
-        $mma.AddCloudWorkspace($SecurityWorkspaceId, $SecurityWorkspaceKey, $AzureEnvironment)
-        $mma.ReloadConfiguration() | Out-Null
-    }
 
     ##############################################################
     #  Restart VM

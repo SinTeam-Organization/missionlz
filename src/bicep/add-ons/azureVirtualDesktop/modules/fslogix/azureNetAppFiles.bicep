@@ -1,6 +1,7 @@
 param artifactsUri string
 param activeDirectoryConnection string
 param delegatedSubnetId string
+param deploymentNameSuffix string
 param deploymentUserAssignedIdentityClientId string
 param dnsServers string
 @secure()
@@ -21,7 +22,6 @@ param storageSku string
 param storageService string
 param tagsNetAppAccount object
 param tagsVirtualMachines object
-param timestamp string
 
 resource netAppAccount 'Microsoft.NetApp/netAppAccounts@2021-06-01' = {
   name: netAppAccountName
@@ -131,7 +131,7 @@ resource volumes 'Microsoft.NetApp/netAppAccounts/capacityPools/volumes@2021-06-
 }]
 
 module ntfsPermissions '../common/customScriptExtensions.bicep' = {
-  name: 'FslogixNtfsPermissions_${timestamp}'
+  name: 'deploy-fslogix-ntfs-permissions-${deploymentNameSuffix}'
   scope: resourceGroup(resourceGroupManagement)
   params: {
     fileUris: [

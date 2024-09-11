@@ -1,19 +1,22 @@
+param activeDirectorySolution string
 param artifactsUri string
 param automationAccountName string
 param availability string
 param azureFilesPrivateDnsZoneResourceId string
+param deploymentNameSuffix string
 param deploymentUserAssignedIdentityClientId string
 @secure()
 param domainJoinPassword string
 param domainJoinUserPrincipalName string
 param enableRecoveryServices bool
 param encryptionUserAssignedIdentityResourceId string
-param activeDirectorySolution string
+param environmentAbbreviation string
 param fileShares array
 param fslogixShareSizeInGB int
 param fslogixContainerType string
 param fslogixStorageService string
 param hostPoolType string
+param identifier string
 param keyVaultUri string
 param location string
 param managementVirtualMachineName string
@@ -34,16 +37,13 @@ param storageEncryptionKeyName string
 param storageIndex int
 param storageSku string
 param storageService string
-param subnet string
+param subnetResourceId string
 param tagsAutomationAccounts object
 param tagsPrivateEndpoints object
 param tagsRecoveryServicesVault object
 param tagsStorageAccounts object
 param tagsVirtualMachines object
-param timestamp string
 param timeZone string
-param virtualNetwork string
-param virtualNetworkResourceGroup string
 
 var roleDefinitionId = '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb' // Storage File Data SMB Share Contributor 
 var smbMultiChannel = {
@@ -58,10 +58,10 @@ var smbSettings = {
   channelEncryption: 'AES-128-GCM;AES-256-GCM;'
 }
 var storageRedundancy = availability == 'availabilityZones' ? '_ZRS' : '_LRS'
-var subnetId = resourceId(virtualNetworkResourceGroup, 'Microsoft.Network/virtualNetworks/subnets', virtualNetwork, subnet)
+var uniqueToken = uniqueString(identifier, environmentAbbreviation, subscription().subscriptionId)
 
 resource storageAccounts 'Microsoft.Storage/storageAccounts@2022-09-01' = [for i in range(0, storageCount): {
-  name: '${storageAccountNamePrefix}${padLeft(i + storageIndex, 2, '0')}'
+  name: take('${storageAccountNamePrefix}${padLeft(i + storageIndex, 2, '0')}${uniqueToken}', 24)
   location: location
   tags: tagsStorageAccounts
   sku: {
@@ -156,7 +156,7 @@ resource fileServices 'Microsoft.Storage/storageAccounts/fileServices@2022-09-01
 }]
 
 module shares 'shares.bicep' = [for i in range(0, storageCount): {
-  name: 'fileShares_${i}_${timestamp}'
+  name: 'deploy-file-shares-${i}-${deploymentNameSuffix}'
   params: {
     fileShares: fileShares
     fslogixShareSizeInGB: fslogixShareSizeInGB
@@ -186,7 +186,7 @@ resource privateEndpoints 'Microsoft.Network/privateEndpoints@2023-04-01' = [for
       }
     ]
     subnet: {
-      id: subnetId
+      id: subnetResourceId
     }
   }
 }]
@@ -210,14 +210,14 @@ resource privateDnsZoneGroups 'Microsoft.Network/privateEndpoints/privateDnsZone
 }]
 
 module ntfsPermissions '../../common/customScriptExtensions.bicep' = if (contains(activeDirectorySolution, 'DomainServices')) {
-  name: 'FslogixNtfsPermissions_${timestamp}'
+  name: 'deploy-fslogix-ntfs-permissions-${deploymentNameSuffix}'
   scope: resourceGroup(resourceGroupManagement)
   params: {
     fileUris: [
       '${artifactsUri}Set-NtfsPermissions.ps1'
     ]
     location: location
-    parameters: '-domainJoinPassword "${domainJoinPassword}" -domainJoinUserPrincipalName ${domainJoinUserPrincipalName} -activeDirectorySolution ${activeDirectorySolution} -Environment ${environment().name} -fslogixContainerType ${fslogixContainerType} -netbios ${netbios} -organizationalUnitPath "${organizationalUnitPath}" -securityPrincipalNames "${securityPrincipalNames}" -StorageAccountPrefix ${storageAccountNamePrefix} -StorageAccountResourceGroupName ${resourceGroupStorage} -storageCount ${storageCount} -storageIndex ${storageIndex} -storageService ${storageService} -StorageSuffix ${environment().suffixes.storage} -SubscriptionId ${subscription().subscriptionId} -TenantId ${subscription().tenantId} -UserAssignedIdentityClientId ${deploymentUserAssignedIdentityClientId}'
+    parameters: '-domainJoinPassword "${domainJoinPassword}" -domainJoinUserPrincipalName ${domainJoinUserPrincipalName} -activeDirectorySolution ${activeDirectorySolution} -Environment ${environment().name} -fslogixContainerType ${fslogixContainerType} -netbios ${netbios} -organizationalUnitPath "${organizationalUnitPath}" -securityPrincipalNames "${securityPrincipalNames}" -StorageAccountPrefix ${storageAccountNamePrefix} -StorageAccountResourceGroupName ${resourceGroupStorage} -storageCount ${storageCount} -storageIndex ${storageIndex} -storageService ${storageService} -StorageSuffix ${environment().suffixes.storage} -SubscriptionId ${subscription().subscriptionId} -TenantId ${subscription().tenantId} -UniqueToken ${uniqueToken} -UserAssignedIdentityClientId ${deploymentUserAssignedIdentityClientId}'
     scriptFileName: 'Set-NtfsPermissions.ps1'
     tags: tagsVirtualMachines
     userAssignedIdentityClientId: deploymentUserAssignedIdentityClientId
@@ -231,9 +231,10 @@ module ntfsPermissions '../../common/customScriptExtensions.bicep' = if (contain
 }
 
 module recoveryServices 'recoveryServices.bicep' = if (enableRecoveryServices && contains(hostPoolType, 'Pooled')) {
-  name: 'recoveryServices_AzureFiles_${timestamp}'
+  name: 'deploy-backup-azure-files-${deploymentNameSuffix}'
   scope: resourceGroup(resourceGroupManagement)
   params: {
+    deploymentNameSuffix: deploymentNameSuffix
     fileShares: fileShares
     location: location
     recoveryServicesVaultName: recoveryServicesVaultName
@@ -242,7 +243,6 @@ module recoveryServices 'recoveryServices.bicep' = if (enableRecoveryServices &&
     storageCount: storageCount
     storageIndex: storageIndex
     tagsRecoveryServicesVault: tagsRecoveryServicesVault
-    timestamp: timestamp
   }
   dependsOn: [
     shares
@@ -250,11 +250,12 @@ module recoveryServices 'recoveryServices.bicep' = if (enableRecoveryServices &&
 }
 
 module autoIncreasePremiumFileShareQuota '../../management/autoIncreasePremiumFileShareQuota.bicep' = if (fslogixStorageService == 'AzureFiles Premium' && storageCount > 0) {
-  name: 'AutoIncreasePremiumFileShareQuota_${timestamp}'
+  name: 'deploy-file-share-scaling-${deploymentNameSuffix}'
   scope: resourceGroup(resourceGroupManagement)
   params: {
     artifactsUri: artifactsUri
     automationAccountName: automationAccountName
+    deploymentNameSuffix: deploymentNameSuffix
     deploymentUserAssignedIdentityClientId: deploymentUserAssignedIdentityClientId
     fslogixContainerType: fslogixContainerType
     location: location
@@ -264,7 +265,6 @@ module autoIncreasePremiumFileShareQuota '../../management/autoIncreasePremiumFi
     storageIndex: storageIndex
     storageResourceGroupName: resourceGroupStorage
     tags: tagsAutomationAccounts
-    timestamp: timestamp
     timeZone: timeZone
   }
   dependsOn: [

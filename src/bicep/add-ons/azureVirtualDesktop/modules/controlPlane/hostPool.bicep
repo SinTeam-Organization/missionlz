@@ -1,21 +1,31 @@
 param activeDirectorySolution string
 param avdPrivateDnsZoneResourceId string
+param customImageId string
 param customRdpProperty string
+param diskSku string
+param domainName string
+param galleryImageOffer string
+param galleryImagePublisher string
+param galleryImageSku string
+param galleryItemId string
 param hostPoolDiagnosticSettingName string
 param hostPoolName string
 param hostPoolNetworkInterfaceName string
 param hostPoolPrivateEndpointName string
 param hostPoolPublicNetworkAccess string
 param hostPoolType string
+param imageType string
 param location string
 param logAnalyticsWorkspaceResourceId string
 param maxSessionLimit int
+param mlzTags object
 param monitoring bool
+param sessionHostNamePrefix string
 param subnetResourceId string
 param tags object
 param time string = utcNow('u')
 param validationEnvironment bool
-param vmTemplate string
+param virtualMachineSize string
 
 var customRdpProperty_Complete = contains(activeDirectorySolution, 'MicrosoftEntraId') ? '${customRdpProperty}targetisaadjoined:i:1;enablerdsaadauth:i:1;' : customRdpProperty
 var hostPoolLogs = [
@@ -50,7 +60,7 @@ resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' = {
   location: location
   tags: union({
     'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
-  }, contains(tags, 'Microsoft.DesktopVirtualization/hostPools') ? tags['Microsoft.DesktopVirtualization/hostPools'] : {})
+  }, contains(tags, 'Microsoft.DesktopVirtualization/hostPools') ? tags['Microsoft.DesktopVirtualization/hostPools'] : {}, mlzTags)
   properties: {
     customRdpProperty: customRdpProperty_Complete
     hostPoolType: split(hostPoolType, ' ')[0]
@@ -65,7 +75,7 @@ resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' = {
     }
     startVMOnConnect: true
     validationEnvironment: validationEnvironment
-    vmTemplate: vmTemplate
+    vmTemplate: '{"domain":"${domainName}","galleryImageOffer":${galleryImageOffer},"galleryImagePublisher":${galleryImagePublisher},"galleryImageSKU":${galleryImageSku},"imageType":${imageType},"customImageId":${customImageId},"namePrefix":"${sessionHostNamePrefix}","osDiskType":"${diskSku}","vmSize":{"id":"${virtualMachineSize}","cores":null,"ram":null,"rdmaEnabled": false,"supportsMemoryPreservingMaintenance": true},"galleryItemId":${galleryItemId},"hibernate":false,"diskSizeGB":0,"securityType":"TrustedLaunch","secureBoot":true,"vTPM":true,"vmInfrastructureType":"Cloud","virtualProcessorCount":null,"memoryGB":null,"maximumMemoryGB":null,"minimumMemoryGB":null,"dynamicMemoryConfig":false}'
 
   }
 }
@@ -75,7 +85,7 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-04-01' = {
   location: location
   tags: union({
     'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroup().name}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
-  }, contains(tags, 'Microsoft.Network/privateEndpoints') ? tags['Microsoft.Network/privateEndpoints'] : {})
+  }, contains(tags, 'Microsoft.Network/privateEndpoints') ? tags['Microsoft.Network/privateEndpoints'] : {}, mlzTags)
   properties: {
     customNetworkInterfaceName: hostPoolNetworkInterfaceName
     privateLinkServiceConnections: [
@@ -119,4 +129,5 @@ resource diagnosticSetting 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   }
 }
 
-output ResourceId string = hostPool.id
+output name string = hostPool.name
+output resourceId string = hostPool.id

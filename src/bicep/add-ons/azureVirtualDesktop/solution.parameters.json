@@ -1,0 +1,179 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "activeDirectorySolution": {
+      "value": "ActiveDirectoryDomainServices"
+    },
+    "artifactsContainerName": {
+      "value": "artifacts"
+    },
+    "artifactsStorageAccountResourceId": {
+      "value": "/subscriptions/010ca3d8-1b48-4035-9750-dc6009796c51/resourceGroups/z-dev-base/providers/Microsoft.Storage/storageAccounts/sadevbase"
+    },
+    "avdAgentMsiName": {
+      "value": "Microsoft.RDInfra.RDAgent.Installer-x64-1.0.8431.2300.msi"
+    },
+    "avdAgentBootLoaderMsiName": {
+      "value": "Microsoft.RDInfra.RDAgentBootLoader.Installer-x64-1.0.8925.0.msi"
+    },
+    "avdObjectId": {
+      "value": "2d16a517-86ed-45ae-a1ce-d4b991776f9b"
+    },
+    "azurePowerShellModuleMsiName": {
+      "value": "Az-Cmdlets-10.2.0.37547-x64.msi"
+    },
+    "deployActivityLogDiagnosticSetting": {
+      "value": false
+    },
+    "deployDefender": {
+      "value": false
+    },
+    "deployNetworkWatcherControlPlane": {
+      "value": false
+    },
+    "deployNetworkWatcherVirtualMachines": {
+      "value": false
+    },
+    "deployPolicy": {
+      "value": false
+    },
+    "emailSecurityContact": {
+      "value": "shjaquay@microsoft.com"
+    },
+    "hostPoolPublicNetworkAccess": {
+      "value": "Enabled"
+    },
+    "hubAzureFirewallResourceId": {
+      "value": "/subscriptions/010ca3d8-1b48-4035-9750-dc6009796c51/resourceGroups/ccthis-rg-network-hub-prod-va/providers/Microsoft.Network/azureFirewalls/ccthis-afw-hub-prod-va"
+    },
+    "hubVirtualNetworkResourceId": {
+      "value": "/subscriptions/010ca3d8-1b48-4035-9750-dc6009796c51/resourceGroups/ccthis-rg-network-hub-prod-va/providers/Microsoft.Network/virtualNetworks/ccthis-vnet-hub-prod-va"
+    },
+    "operationsLogAnalyticsWorkspaceResourceId": {
+      "value": "/subscriptions/010ca3d8-1b48-4035-9750-dc6009796c51/resourceGroups/ccthis-rg-network-operations-prod-va/providers/Microsoft.OperationalInsights/workspaces/ccthis-log-operations-prod-va"
+    },
+    "securityPrincipals": {
+      "value": [
+        {
+          "name": "AVD-Users-PersonalDesktops",
+          "objectId": "49f065f5-992a-4ffb-beac-aadb290a489a"
+        }
+      ]
+    },
+    "sharedServicesSubnetResourceId": {
+      "value": "/subscriptions/010ca3d8-1b48-4035-9750-dc6009796c51/resourceGroups/ccthis-rg-network-sharedServices-prod-va/providers/Microsoft.Network/virtualNetworks/ccthis-vnet-sharedServices-prod-va/subnets/ccthis-snet-sharedServices-prod-va"
+    },
+    "virtualMachineVirtualCpuCount": {
+      "value": 2
+    },
+    "virtualMachinePassword": {
+      "value": "!QAZXSW@1qazxsw2"
+    },
+    "virtualMachineUsername": {
+      "value": "localadmin"
+    },
+    "workspacePublicNetworkAccess": {
+      "value": "Enabled"
+    },
+    "domainJoinPassword": {
+      "value": "!QAZXSW@1qazxsw2"
+    },
+    "domainJoinUserPrincipalName": {
+      "value": "localadmin@ccthis.us"
+    },
+    "domainName": {
+      "value": "ccthis.us"
+    },
+    "hostPoolType": {
+      "value": "Personal Automatic"
+    },
+    "identifier": {
+      "value": "avd"
+    },
+    "imageVersionResourceId": {
+      "value": "/subscriptions/010ca3d8-1b48-4035-9750-dc6009796c51/resourceGroups/ccthis-rg-network-sharedservices-prod-va/providers/Microsoft.Compute/galleries/ccthis_cg_aib/images/ccthis_gallery/versions/0.0.1"
+    },
+    "customRdpProperty": {
+      "value": "audiocapturemode:i:1;camerastoredirect:s:*;use multimon:i:0;drivestoredirect:s:;encode redirected video capture:i:1;redirected video capture encoding quality:i:1;audiomode:i:0;devicestoredirect:s:;redirectclipboard:i:0;redirectcomports:i:0;redirectlocation:i:1;redirectprinters:i:0;redirectsmartcards:i:1;redirectwebauthn:i:1;usbdevicestoredirect:s:;keyboardhook:i:2;"
+    },
+    "diskSku": {
+      "value": "Standard_LRS"
+    },
+    "environmentAbbreviation": {
+      "value": "prod"
+    },
+    "fslogixShareSizeInGB": {
+      "value": 100
+    },
+    "fslogixStorageService": {
+      "value": "None"
+    },
+    "imagePublisher": {
+      "value": "MicrosoftWindowsDesktop"
+    },
+    "locationControlPlane": {
+      "value": "usgovvirginia"
+    },
+    "locationVirtualMachines": {
+      "value": "usgovvirginia"
+    },
+    "logAnalyticsWorkspaceRetention": {
+      "value": 30
+    },
+    "logAnalyticsWorkspaceSku": {
+      "value": "PerGB2018"
+    },
+    "organizationalUnitPath": {
+      "value": "OU=Devices,OU=AVD,DC=ccthis,DC=us"
+    },
+    "scalingBeginPeakTime": {
+      "value": "09:00"
+    },
+    "scalingEndPeakTime": {
+      "value": "17:00"
+    },
+    "scalingLimitSecondsToForceLogOffUser": {
+      "value": "0"
+    },
+    "scalingMinimumNumberOfRdsh": {
+      "value": "0"
+    },
+    "scalingSessionThresholdPerCPU": {
+      "value": "1"
+    },
+    "sessionHostCount": {
+      "value": 1
+    },
+    "subnetAddressPrefixes": {
+      "value": [
+        "10.0.140.0/24"
+      ]
+    },
+    "tags": {
+      "value": {
+        "costCenter": "CC-1234",
+        "environment": "prod",
+        "project": "AVD",
+        "resourceType": "AVD"
+      }
+    },
+    "usersPerCore": {
+      "value": 1
+    },
+    "validationEnvironment": {
+      "value": false
+    },
+    "virtualMachineMonitoringAgent": {
+      "value": "AzureMonitorAgent"
+    },
+    "virtualMachineSize": {
+      "value": "Standard_D2s_v5"
+    },
+    "virtualNetworkAddressPrefixes": {
+      "value": [
+        "10.0.140.0/24"
+      ]
+    }
+  }
+}

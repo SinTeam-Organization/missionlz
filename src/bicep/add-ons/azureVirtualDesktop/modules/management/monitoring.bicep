@@ -4,6 +4,7 @@ param location string
 param logAnalyticsWorkspaceName string
 param logAnalyticsWorkspaceRetention int
 param logAnalyticsWorkspaceSku string
+param mlzTags object
 param resourceGroupControlPlane string
 param tags object
 param virtualMachineMonitoringAgent string
@@ -396,7 +397,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06
   location: location
   tags: union({
     'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
-  }, contains(tags, 'Microsoft.OperationalInsights/workspaces') ? tags['Microsoft.OperationalInsights/workspaces'] : {})
+  }, contains(tags, 'Microsoft.OperationalInsights/workspaces') ? tags['Microsoft.OperationalInsights/workspaces'] : {}, mlzTags)
   properties: {
     sku: {
       name: logAnalyticsWorkspaceSku
@@ -416,7 +417,7 @@ resource windowsEvents 'Microsoft.OperationalInsights/workspaces/dataSources@202
   name: 'WindowsEvent${i}'
   tags: union({
     'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
-  }, contains(tags, 'Microsoft.OperationalInsights/workspaces') ? tags['Microsoft.OperationalInsights/workspaces'] : {})
+  }, contains(tags, 'Microsoft.OperationalInsights/workspaces') ? tags['Microsoft.OperationalInsights/workspaces'] : {}, mlzTags)
   kind: 'WindowsEvent'
   properties: {
     eventLogName: item.name
@@ -430,7 +431,7 @@ resource windowsPerformanceCounters 'Microsoft.OperationalInsights/workspaces/da
   name: 'WindowsPerformanceCounter${i}'
   tags: union({
     'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
-  }, contains(tags, 'Microsoft.OperationalInsights/workspaces') ? tags['Microsoft.OperationalInsights/workspaces'] : {})
+  }, contains(tags, 'Microsoft.OperationalInsights/workspaces') ? tags['Microsoft.OperationalInsights/workspaces'] : {}, mlzTags)
   kind: 'WindowsPerformanceCounter'
   properties: {
     objectName: item.objectName
@@ -448,7 +449,7 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' 
   location: location
   tags: union({
     'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'
-  }, contains(tags, 'Microsoft.Insights/dataCollectionRules') ? tags['Microsoft.Insights/dataCollectionRules'] : {})
+  }, contains(tags, 'Microsoft.Insights/dataCollectionRules') ? tags['Microsoft.Insights/dataCollectionRules'] : {}, mlzTags)
   kind: 'Windows'
   properties: {
     dataSources: {
@@ -531,6 +532,7 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2022-06-01' 
   }
 }
 
+output logAnalyticsWorkspaceName string = logAnalyticsWorkspace.name
 output logAnalyticsWorkspaceResourceId string = logAnalyticsWorkspace.id
 output dataCollectionRuleResourceId string = virtualMachineMonitoringAgent == 'AzureMonitorAgent' ? dataCollectionRule.id : ''
 

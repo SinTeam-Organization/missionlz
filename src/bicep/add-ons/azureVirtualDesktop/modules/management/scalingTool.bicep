@@ -1,6 +1,7 @@
 param artifactsUri string
 param automationAccountName string
 param beginPeakTime string
+param deploymentNameSuffix string
 param endPeakTime string
 param hostPoolName string
 param hostPoolResourceGroupName string
@@ -13,9 +14,8 @@ param resourceGroupControlPlane string
 param resourceGroupHosts string
 param sessionThresholdPerCPU string
 param tags object
-param timeDifference string
 param time string = utcNow('u')
-param timestamp string
+param timeDifference string
 param timeZone string
 param userAssignedIdentityClientId string
 
@@ -31,7 +31,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2022-08-08' 
 }
 
 module runbook '../common/customScriptExtensions.bicep' = {
-  name: 'Runbook_${timestamp}'
+  name: 'deploy-runboook-${deploymentNameSuffix}'
   params: {
     fileUris: [
       '${artifactsUri}${runbookFileName}'
@@ -40,7 +40,7 @@ module runbook '../common/customScriptExtensions.bicep' = {
     location: location
     parameters: '-AutomationAccountName ${automationAccountName} -Environment ${environment().name} -ResourceGroupName ${resourceGroup().name} -RunbookFileName ${runbookFileName} -SubscriptionId ${subscription().subscriptionId} -TenantId ${tenant().tenantId} -UserAssignedIdentityClientId ${userAssignedIdentityClientId}'
     scriptFileName: scriptFileName
-    tags: contains(tags, 'Microsoft.Compute/virtualMachines') ? tags['Microsoft.Compute/virtualMachines'] : {}
+    tags: tags
     userAssignedIdentityClientId: userAssignedIdentityClientId
     virtualMachineName: managementVirtualMachineName
   }
@@ -96,11 +96,11 @@ resource jobSchedules 'Microsoft.Automation/automationAccounts/jobSchedules@2022
 
 // Gives the Automation Account the "Desktop Virtualization Power On Off Contributor" role on the resource groups containing the hosts and host pool
 module roleAssignment '../common/roleAssignment.bicep' = [for i in range(0, length(roleAssignments)): {
-  name: 'RoleAssignment_${i}_${roleAssignments[i]}'
+  name: 'deploy-role-assignment-${i}-${deploymentNameSuffix}'
   scope: resourceGroup(roleAssignments[i])
   params: {
-    PrincipalId: automationAccount.identity.principalId
-    PrincipalType: 'ServicePrincipal'
-    RoleDefinitionId: '40c5ff49-9181-41f8-ae61-143b0e78555e' // Desktop Virtualization Power On Off Contributor
+    principalId: automationAccount.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: '40c5ff49-9181-41f8-ae61-143b0e78555e' // Desktop Virtualization Power On Off Contributor
   }
 }]

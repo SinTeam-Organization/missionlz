@@ -1,15 +1,16 @@
 param artifactsUri string
+param deploymentNameSuffix string
 param deploymentUserAssignedIdentityClientId string
 param desktopApplicationGroupName string
 param desktopFriendlyName string
 param hostPoolResourceId string
 param locationControlPlane string
 param locationVirtualMachines string
+param mlzTags object
 param resourceGroupManagement string
 param roleDefinitions object
 param securityPrincipalObjectIds array
 param tags object
-param timestamp string
 param virtualMachineName string
 
 resource applicationGroup 'Microsoft.DesktopVirtualization/applicationGroups@2021-03-09-preview' = {
@@ -17,7 +18,7 @@ resource applicationGroup 'Microsoft.DesktopVirtualization/applicationGroups@202
   location: locationControlPlane
   tags: union({
     'cm-resource-parent': hostPoolResourceId
-  }, contains(tags, 'Microsoft.DesktopVirtualization/applicationGroups') ? tags['Microsoft.DesktopVirtualization/applicationGroups'] : {})
+  }, contains(tags, 'Microsoft.DesktopVirtualization/applicationGroups') ? tags['Microsoft.DesktopVirtualization/applicationGroups'] : {}, mlzTags)
   properties: {
     hostPoolArmPath: hostPoolResourceId
     applicationGroupType: 'Desktop'
@@ -27,7 +28,7 @@ resource applicationGroup 'Microsoft.DesktopVirtualization/applicationGroups@202
 // Adds a friendly name to the SessionDesktop application for the desktop application group
 module applicationFriendlyName '../common/customScriptExtensions.bicep' = if (!empty(desktopFriendlyName)) {
   scope: resourceGroup(resourceGroupManagement)
-  name: 'ApplicationFriendlyName_${timestamp}'
+  name: 'deploy-vdapp-friendly-name-${deploymentNameSuffix}'
   params : {
     fileUris: [
       '${artifactsUri}Update-AvdDesktop.ps1'
@@ -37,7 +38,7 @@ module applicationFriendlyName '../common/customScriptExtensions.bicep' = if (!e
     scriptFileName: 'Update-AvdDesktop.ps1'
     tags: union({
       'cm-resource-parent': hostPoolResourceId
-    }, contains(tags, 'Microsoft.Compute/virtualMachines') ? tags['Microsoft.Compute/virtualMachines'] : {})
+    }, contains(tags, 'Microsoft.Compute/virtualMachines') ? tags['Microsoft.Compute/virtualMachines'] : {}, mlzTags)
     userAssignedIdentityClientId: deploymentUserAssignedIdentityClientId
     virtualMachineName: virtualMachineName
   }

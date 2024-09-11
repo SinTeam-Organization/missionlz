@@ -11,8 +11,10 @@ param hostPoolType string
 param imageOffer string
 param imagePublisher string
 param imageSku string
+param imageVersionResourceId string
 param locations object
 param locationVirtualMachines string
+param networkName string
 param resourceGroupControlPlane string
 param resourceGroupFeedWorkspace string
 param resourceGroupHosts string
@@ -20,6 +22,7 @@ param resourceGroupManagement string
 param resourceGroupsNetwork array
 param resourceGroupStorage string
 param securityPrincipals array
+param serviceName string
 param sessionHostCount int
 param sessionHostIndex int
 param virtualMachineNamePrefix string
@@ -40,8 +43,14 @@ var endAvSetRange = (sessionHostCount + sessionHostIndex) / maxAvSetMembers // T
 var availabilitySetsCount = length(range(beginAvSetRange, (endAvSetRange - beginAvSetRange) + 1))
 
 // OTHER LOGIC & COMPUTED VALUES
+var customImageId = empty(imageVersionResourceId) ? 'null' : '"${imageVersionResourceId}"'
 var fileShares = fileShareNames[fslogixContainerType]
 var fslogix = fslogixStorageService == 'None' || !contains(activeDirectorySolution, 'DomainServices') ? false : true
+var galleryImageOffer = empty(imageVersionResourceId) ? '"${imageOffer}"' : 'null'
+var galleryImagePublisher = empty(imageVersionResourceId) ? '"${imagePublisher}"' : 'null'
+var galleryImageSku = empty(imageVersionResourceId) ? '"${imageSku}"' : 'null'
+var galleryItemId = empty(imageVersionResourceId) ? '"${imagePublisher}.${imageOffer}${imageSku}"' : 'null'
+var imageType = empty(imageVersionResourceId) ? '"Gallery"' : '"CustomImage"'
 var netbios = split(domainName, '.')[0]
 var pooledHostPool = split(hostPoolType, ' ')[0] == 'Pooled' ? true : false
 var resourceGroups = union(resourceGroupsCommon, resourceGroupsNetworking, resourceGroupsStorage)
@@ -64,13 +73,14 @@ var roleDefinitions = {
   VirtualMachineUserLogin: 'fb879df8-f326-4884-b1cf-06f3ad86be52'
 }
 var securityPrincipalsCount = length(securityPrincipals)
+var sessionHostNamePrefix = replace(virtualMachineNamePrefix, '${serviceName}${networkName}', '')
 var smbServerLocation = locations[locationVirtualMachines].abbreviation
 var storageSku = fslogixStorageService == 'None' ? 'None' : split(fslogixStorageService, ' ')[1]
 var storageService = split(fslogixStorageService, ' ')[0]
 var storageSuffix = environment().suffixes.storage
 var timeDifference = locations[locationVirtualMachines].timeDifference
 var timeZone = locations[locationVirtualMachines].timeZone
-var vmTemplate = '{"domain":"${domainName}","galleryImageOffer":"${imageOffer}","galleryImagePublisher":"${imagePublisher}","galleryImageSKU":"${imageSku}","imageType":"Gallery","imageUri":null,"customImageId":null,"namePrefix":"${virtualMachineNamePrefix}","osDiskType":"${diskSku}","useManagedDisks":true,"VirtualMachineSize":{"id":"${virtualMachineSize}","cores":null,"ram":null},"galleryItemId":"${imagePublisher}.${imageOffer}${imageSku}"}'
+var vmTemplate = '{"domain":"${domainName}","galleryImageOffer":${galleryImageOffer},"galleryImagePublisher":${galleryImagePublisher},"galleryImageSKU":${galleryImageSku},"imageType":${imageType},"customImageId":${customImageId},"namePrefix":"${sessionHostNamePrefix}","osDiskType":"${diskSku}","vmSize":{"id":"${virtualMachineSize}","cores":null,"ram":null,"rdmaEnabled": false,"supportsMemoryPreservingMaintenance": true},"galleryItemId":${galleryItemId},"hibernate":false,"diskSizeGB":0,"securityType":"TrustedLaunch","secureBoot":true,"vTPM":true,"vmInfrastructureType":"Cloud","virtualProcessorCount":null,"memoryGB":null,"maximumMemoryGB":null,"minimumMemoryGB":null,"dynamicMemoryConfig":false}'
 
 output availabilitySetsCount int = availabilitySetsCount
 output beginAvSetRange int = beginAvSetRange

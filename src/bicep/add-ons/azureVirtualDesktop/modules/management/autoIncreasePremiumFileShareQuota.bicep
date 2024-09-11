@@ -1,5 +1,6 @@
 param artifactsUri string
 param automationAccountName string
+param deploymentNameSuffix string
 param deploymentUserAssignedIdentityClientId string
 param fslogixContainerType string
 param location string
@@ -9,7 +10,6 @@ param storageCount int
 param storageIndex int
 param storageResourceGroupName string
 param tags object
-param timestamp string
 param timeZone string
 
 var runbookFileName = 'Set-FileShareScaling.ps1'
@@ -21,7 +21,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2022-08-08' 
 }
 
 module runbook '../common/customScriptExtensions.bicep' = {
-  name: 'Runbook_QuotaScaling_${timestamp}'
+  name: 'deploy-runbook-${deploymentNameSuffix}'
   params: {
     fileUris: [
       '${artifactsUri}${runbookFileName}'
@@ -30,14 +30,14 @@ module runbook '../common/customScriptExtensions.bicep' = {
     location: location
     parameters: '-AutomationAccountName ${automationAccountName} -Environment ${environment().name} -ResourceGroupName ${resourceGroup().name} -RunbookFileName ${runbookFileName} -SubscriptionId ${subscription().subscriptionId} -TenantId ${tenant().tenantId} -UserAssignedIdentityClientId ${deploymentUserAssignedIdentityClientId}'
     scriptFileName: scriptFileName
-    tags: contains(tags, 'Microsoft.Compute/virtualMachines') ? tags['Microsoft.Compute/virtualMachines'] : {}
+    tags: tags
     userAssignedIdentityClientId: deploymentUserAssignedIdentityClientId
     virtualMachineName: managementVirtualMachineName
   }
 }
 
 module schedules 'schedules.bicep' = [for i in range(storageIndex, storageCount): {
-  name: 'Schedules_${i}_${timestamp}'
+  name: 'deploy-schedules-${i}-${deploymentNameSuffix}'
   params: {
     automationAccountName: automationAccount.name
     fslogixContainerType: fslogixContainerType
@@ -47,7 +47,7 @@ module schedules 'schedules.bicep' = [for i in range(storageIndex, storageCount)
 }]
 
 module jobSchedules 'jobSchedules.bicep' = [for i in range(storageIndex, storageCount): {
-  name: 'JobSchedules_${i}_${timestamp}'
+  name: 'deploy-job-schedules-${i}-${deploymentNameSuffix}'
   params: {
     automationAccountName: automationAccount.name
     environment: environment().name
@@ -56,7 +56,6 @@ module jobSchedules 'jobSchedules.bicep' = [for i in range(storageIndex, storage
     resourceGroupName: storageResourceGroupName
     storageAccountName: '${storageAccountNamePrefix}${padLeft(i, 2, '0')}'
     subscriptionId: subscriptionId
-    timestamp: timestamp
   }
   dependsOn: [
     runbook
@@ -65,11 +64,11 @@ module jobSchedules 'jobSchedules.bicep' = [for i in range(storageIndex, storage
 }]
 
 module roleAssignment '../common/roleAssignment.bicep' = {
-  name: 'RoleAssignment_Storage_${timestamp}'
+  name: 'deploy-role-assignment-storage-${deploymentNameSuffix}'
   scope: resourceGroup(storageResourceGroupName)
   params: {
-    PrincipalId: automationAccount.identity.principalId
-    PrincipalType: 'ServicePrincipal'
-    RoleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab' // Storage Account Contributor
+    principalId: automationAccount.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab' // Storage Account Contributor
   }
 }

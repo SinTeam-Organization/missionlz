@@ -1,0 +1,1850 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.29.47.4906",
+      "templateHash": "9004421119664706260"
+    }
+  },
+  "parameters": {
+    "artifactsUri": {
+      "type": "string"
+    },
+    "activeDirectoryConnection": {
+      "type": "string"
+    },
+    "activeDirectorySolution": {
+      "type": "string"
+    },
+    "availability": {
+      "type": "string"
+    },
+    "azureFilesPrivateDnsZoneResourceId": {
+      "type": "string"
+    },
+    "delegatedSubnetId": {
+      "type": "string"
+    },
+    "deploymentNameSuffix": {
+      "type": "string"
+    },
+    "deploymentUserAssignedIdentityClientId": {
+      "type": "string"
+    },
+    "dnsServers": {
+      "type": "string"
+    },
+    "domainJoinPassword": {
+      "type": "securestring"
+    },
+    "domainJoinUserPrincipalName": {
+      "type": "string"
+    },
+    "domainName": {
+      "type": "string"
+    },
+    "encryptionUserAssignedIdentityResourceId": {
+      "type": "string"
+    },
+    "environmentAbbreviation": {
+      "type": "string"
+    },
+    "fileShares": {
+      "type": "array"
+    },
+    "fslogixShareSizeInGB": {
+      "type": "int"
+    },
+    "fslogixContainerType": {
+      "type": "string"
+    },
+    "fslogixStorageService": {
+      "type": "string"
+    },
+    "hostPoolType": {
+      "type": "string"
+    },
+    "identifier": {
+      "type": "string"
+    },
+    "keyVaultUri": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "managementVirtualMachineName": {
+      "type": "string"
+    },
+    "mlzTags": {
+      "type": "object"
+    },
+    "namingConvention": {
+      "type": "object"
+    },
+    "netbios": {
+      "type": "string"
+    },
+    "organizationalUnitPath": {
+      "type": "string"
+    },
+    "recoveryServices": {
+      "type": "bool"
+    },
+    "resourceGroupControlPlane": {
+      "type": "string"
+    },
+    "resourceGroupManagement": {
+      "type": "string"
+    },
+    "resourceGroupStorage": {
+      "type": "string"
+    },
+    "securityPrincipalObjectIds": {
+      "type": "array"
+    },
+    "securityPrincipalNames": {
+      "type": "array"
+    },
+    "serviceToken": {
+      "type": "string"
+    },
+    "smbServerLocation": {
+      "type": "string"
+    },
+    "storageCount": {
+      "type": "int"
+    },
+    "storageEncryptionKeyName": {
+      "type": "string"
+    },
+    "storageIndex": {
+      "type": "int"
+    },
+    "storageSku": {
+      "type": "string"
+    },
+    "storageService": {
+      "type": "string"
+    },
+    "subnetResourceId": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "object"
+    },
+    "timeZone": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "hostPoolName": "[parameters('namingConvention').hostPool]",
+    "tagsAutomationAccounts": "[union(createObject('cm-resource-parent', format('{0}}}/resourceGroups/{1}/providers/Microsoft.DesktopVirtualization/hostpools/{2}', subscription().id, parameters('resourceGroupControlPlane'), variables('hostPoolName'))), if(contains(parameters('tags'), 'Microsoft.Automation/automationAccounts'), parameters('tags')['Microsoft.Automation/automationAccounts'], createObject()), parameters('mlzTags'))]",
+    "tagsNetAppAccount": "[union(createObject('cm-resource-parent', format('{0}}}/resourceGroups/{1}/providers/Microsoft.DesktopVirtualization/hostpools/{2}', subscription().id, parameters('resourceGroupControlPlane'), variables('hostPoolName'))), if(contains(parameters('tags'), 'Microsoft.NetApp/netAppAccounts'), parameters('tags')['Microsoft.NetApp/netAppAccounts'], createObject()), parameters('mlzTags'))]",
+    "tagsPrivateEndpoints": "[union(createObject('cm-resource-parent', format('{0}}}/resourceGroups/{1}/providers/Microsoft.DesktopVirtualization/hostpools/{2}', subscription().id, parameters('resourceGroupControlPlane'), variables('hostPoolName'))), if(contains(parameters('tags'), 'Microsoft.Network/privateEndpoints'), parameters('tags')['Microsoft.Network/privateEndpoints'], createObject()), parameters('mlzTags'))]",
+    "tagsStorageAccounts": "[union(createObject('cm-resource-parent', format('{0}}}/resourceGroups/{1}/providers/Microsoft.DesktopVirtualization/hostpools/{2}', subscription().id, parameters('resourceGroupControlPlane'), variables('hostPoolName'))), if(contains(parameters('tags'), 'Microsoft.Storage/storageAccounts'), parameters('tags')['Microsoft.Storage/storageAccounts'], createObject()), parameters('mlzTags'))]",
+    "tagsRecoveryServicesVault": "[union(createObject('cm-resource-parent', format('{0}}}/resourceGroups/{1}/providers/Microsoft.DesktopVirtualization/hostpools/{2}', subscription().id, parameters('resourceGroupControlPlane'), variables('hostPoolName'))), if(contains(parameters('tags'), 'Microsoft.recoveryServices/vaults'), parameters('tags')['Microsoft.recoveryServices/vaults'], createObject()), parameters('mlzTags'))]",
+    "tagsVirtualMachines": "[union(createObject('cm-resource-parent', format('{0}}}/resourceGroups/{1}/providers/Microsoft.DesktopVirtualization/hostpools/{2}', subscription().id, parameters('resourceGroupControlPlane'), variables('hostPoolName'))), if(contains(parameters('tags'), 'Microsoft.Compute/virtualMachines'), parameters('tags')['Microsoft.Compute/virtualMachines'], createObject()), parameters('mlzTags'))]"
+  },
+  "resources": [
+    {
+      "condition": "[and(equals(parameters('storageService'), 'AzureNetAppFiles'), contains(parameters('activeDirectorySolution'), 'DomainServices'))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('deploy-anf-{0}', parameters('deploymentNameSuffix'))]",
+      "resourceGroup": "[parameters('resourceGroupStorage')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "activeDirectoryConnection": {
+            "value": "[parameters('activeDirectoryConnection')]"
+          },
+          "artifactsUri": {
+            "value": "[parameters('artifactsUri')]"
+          },
+          "delegatedSubnetId": {
+            "value": "[parameters('delegatedSubnetId')]"
+          },
+          "deploymentNameSuffix": {
+            "value": "[parameters('deploymentNameSuffix')]"
+          },
+          "deploymentUserAssignedIdentityClientId": {
+            "value": "[parameters('deploymentUserAssignedIdentityClientId')]"
+          },
+          "dnsServers": {
+            "value": "[parameters('dnsServers')]"
+          },
+          "domainJoinPassword": {
+            "value": "[parameters('domainJoinPassword')]"
+          },
+          "domainJoinUserPrincipalName": {
+            "value": "[parameters('domainJoinUserPrincipalName')]"
+          },
+          "domainName": {
+            "value": "[parameters('domainName')]"
+          },
+          "fileShares": {
+            "value": "[parameters('fileShares')]"
+          },
+          "fslogixContainerType": {
+            "value": "[parameters('fslogixContainerType')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "managementVirtualMachineName": {
+            "value": "[parameters('managementVirtualMachineName')]"
+          },
+          "netAppAccountName": {
+            "value": "[parameters('namingConvention').netAppAccount]"
+          },
+          "netAppCapacityPoolName": {
+            "value": "[parameters('namingConvention').netAppAccountCapacityPool]"
+          },
+          "organizationalUnitPath": {
+            "value": "[parameters('organizationalUnitPath')]"
+          },
+          "resourceGroupManagement": {
+            "value": "[parameters('resourceGroupManagement')]"
+          },
+          "securityPrincipalNames": {
+            "value": "[parameters('securityPrincipalNames')]"
+          },
+          "smbServerLocation": {
+            "value": "[parameters('smbServerLocation')]"
+          },
+          "storageService": {
+            "value": "[parameters('storageService')]"
+          },
+          "storageSku": {
+            "value": "[parameters('storageSku')]"
+          },
+          "tagsNetAppAccount": {
+            "value": "[variables('tagsNetAppAccount')]"
+          },
+          "tagsVirtualMachines": {
+            "value": "[variables('tagsVirtualMachines')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.29.47.4906",
+              "templateHash": "13110055829590706268"
+            }
+          },
+          "parameters": {
+            "artifactsUri": {
+              "type": "string"
+            },
+            "activeDirectoryConnection": {
+              "type": "string"
+            },
+            "delegatedSubnetId": {
+              "type": "string"
+            },
+            "deploymentNameSuffix": {
+              "type": "string"
+            },
+            "deploymentUserAssignedIdentityClientId": {
+              "type": "string"
+            },
+            "dnsServers": {
+              "type": "string"
+            },
+            "domainJoinPassword": {
+              "type": "securestring"
+            },
+            "domainJoinUserPrincipalName": {
+              "type": "string"
+            },
+            "domainName": {
+              "type": "string"
+            },
+            "fileShares": {
+              "type": "array"
+            },
+            "fslogixContainerType": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "managementVirtualMachineName": {
+              "type": "string"
+            },
+            "netAppAccountName": {
+              "type": "string"
+            },
+            "netAppCapacityPoolName": {
+              "type": "string"
+            },
+            "organizationalUnitPath": {
+              "type": "string"
+            },
+            "resourceGroupManagement": {
+              "type": "string"
+            },
+            "securityPrincipalNames": {
+              "type": "array"
+            },
+            "smbServerLocation": {
+              "type": "string"
+            },
+            "storageSku": {
+              "type": "string"
+            },
+            "storageService": {
+              "type": "string"
+            },
+            "tagsNetAppAccount": {
+              "type": "object"
+            },
+            "tagsVirtualMachines": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.NetApp/netAppAccounts",
+              "apiVersion": "2021-06-01",
+              "name": "[parameters('netAppAccountName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tagsNetAppAccount')]",
+              "properties": {
+                "activeDirectories": "[if(equals(parameters('activeDirectoryConnection'), 'false'), null(), createArray(createObject('aesEncryption', true(), 'domain', parameters('domainName'), 'dns', parameters('dnsServers'), 'organizationalUnit', parameters('organizationalUnitPath'), 'password', parameters('domainJoinPassword'), 'smbServerName', format('anf-{0}', parameters('smbServerLocation')), 'username', split(parameters('domainJoinUserPrincipalName'), '@')[0])))]",
+                "encryption": {
+                  "keySource": "Microsoft.NetApp"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.NetApp/netAppAccounts/capacityPools",
+              "apiVersion": "2021-06-01",
+              "name": "[format('{0}/{1}', parameters('netAppAccountName'), parameters('netAppCapacityPoolName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tagsNetAppAccount')]",
+              "properties": {
+                "coolAccess": false,
+                "encryptionType": "Single",
+                "qosType": "Auto",
+                "serviceLevel": "[parameters('storageSku')]",
+                "size": 4398046511104
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.NetApp/netAppAccounts', parameters('netAppAccountName'))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "volumes",
+                "count": "[length(range(0, length(parameters('fileShares'))))]"
+              },
+              "type": "Microsoft.NetApp/netAppAccounts/capacityPools/volumes",
+              "apiVersion": "2021-06-01",
+              "name": "[format('{0}/{1}/{2}', parameters('netAppAccountName'), parameters('netAppCapacityPoolName'), parameters('fileShares')[range(0, length(parameters('fileShares')))[copyIndex()]])]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tagsNetAppAccount')]",
+              "properties": {
+                "avsDataStore": "Disabled",
+                "coolAccess": false,
+                "creationToken": "[parameters('fileShares')[range(0, length(parameters('fileShares')))[copyIndex()]]]",
+                "defaultGroupQuotaInKiBs": 0,
+                "defaultUserQuotaInKiBs": 0,
+                "encryptionKeySource": "Microsoft.NetApp",
+                "isDefaultQuotaEnabled": false,
+                "kerberosEnabled": false,
+                "ldapEnabled": false,
+                "networkFeatures": "Standard",
+                "protocolTypes": [
+                  "CIFS"
+                ],
+                "securityStyle": "ntfs",
+                "serviceLevel": "[parameters('storageSku')]",
+                "smbContinuouslyAvailable": true,
+                "smbEncryption": true,
+                "snapshotDirectoryVisible": true,
+                "subnetId": "[parameters('delegatedSubnetId')]",
+                "usageThreshold": 107374182400
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.NetApp/netAppAccounts/capacityPools', parameters('netAppAccountName'), parameters('netAppCapacityPoolName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('deploy-fslogix-ntfs-permissions-{0}', parameters('deploymentNameSuffix'))]",
+              "resourceGroup": "[parameters('resourceGroupManagement')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "fileUris": {
+                    "value": [
+                      "[format('{0}Set-NtfsPermissions.ps1', parameters('artifactsUri'))]"
+                    ]
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "parameters": {
+                    "value": "[format('-domainJoinPassword \"{0}\" -domainJoinUserPrincipalName {1} -fslogixContainerType {2} -securityPrincipalNames \"{3}\" -smbServerLocation {4} -storageService {5}', parameters('domainJoinPassword'), parameters('domainJoinUserPrincipalName'), parameters('fslogixContainerType'), parameters('securityPrincipalNames'), parameters('smbServerLocation'), parameters('storageService'))]"
+                  },
+                  "scriptFileName": {
+                    "value": "Set-NtfsPermissions.ps1"
+                  },
+                  "tags": {
+                    "value": "[parameters('tagsVirtualMachines')]"
+                  },
+                  "userAssignedIdentityClientId": {
+                    "value": "[parameters('deploymentUserAssignedIdentityClientId')]"
+                  },
+                  "virtualMachineName": {
+                    "value": "[parameters('managementVirtualMachineName')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.29.47.4906",
+                      "templateHash": "1897972445567182190"
+                    }
+                  },
+                  "parameters": {
+                    "fileUris": {
+                      "type": "array"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "parameters": {
+                      "type": "securestring"
+                    },
+                    "scriptFileName": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "defaultValue": "[utcNow('yyyyMMddhhmmss')]"
+                    },
+                    "userAssignedIdentityClientId": {
+                      "type": "string"
+                    },
+                    "virtualMachineName": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Compute/virtualMachines/extensions",
+                      "apiVersion": "2021-03-01",
+                      "name": "[format('{0}/{1}', parameters('virtualMachineName'), 'CustomScriptExtension')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "publisher": "Microsoft.Compute",
+                        "type": "CustomScriptExtension",
+                        "typeHandlerVersion": "1.10",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                          "timestamp": "[parameters('timestamp')]"
+                        },
+                        "protectedSettings": {
+                          "commandToExecute": "[format('powershell -ExecutionPolicy Unrestricted -File {0} {1}', parameters('scriptFileName'), parameters('parameters'))]",
+                          "fileUris": "[parameters('fileUris')]",
+                          "managedIdentity": {
+                            "clientId": "[parameters('userAssignedIdentityClientId')]"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "value": {
+                      "type": "object",
+                      "value": "[json(filter(reference(resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('virtualMachineName'), 'CustomScriptExtension'), '2021-03-01').instanceView.substatuses, lambda('item', equals(lambdaVariables('item').code, 'ComponentStatus/StdOut/succeeded')))[0].message)]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "volumes"
+              ]
+            }
+          ],
+          "outputs": {
+            "fileShares": {
+              "type": "array",
+              "value": "[if(contains(parameters('fslogixContainerType'), 'Office'), createArray(reference(resourceId('Microsoft.NetApp/netAppAccounts/capacityPools/volumes', parameters('netAppAccountName'), parameters('netAppCapacityPoolName'), parameters('fileShares')[range(0, length(parameters('fileShares')))[0]]), '2021-06-01').mountTargets[0].smbServerFqdn, reference(resourceId('Microsoft.NetApp/netAppAccounts/capacityPools/volumes', parameters('netAppAccountName'), parameters('netAppCapacityPoolName'), parameters('fileShares')[range(0, length(parameters('fileShares')))[1]]), '2021-06-01').mountTargets[0].smbServerFqdn), createArray(reference(resourceId('Microsoft.NetApp/netAppAccounts/capacityPools/volumes', parameters('netAppAccountName'), parameters('netAppCapacityPoolName'), parameters('fileShares')[range(0, length(parameters('fileShares')))[0]]), '2021-06-01').mountTargets[0].smbServerFqdn))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "condition": "[and(equals(parameters('storageService'), 'AzureFiles'), contains(parameters('activeDirectorySolution'), 'DomainServices'))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('deploy-azure-files-{0}', parameters('deploymentNameSuffix'))]",
+      "resourceGroup": "[parameters('resourceGroupStorage')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "activeDirectorySolution": {
+            "value": "[parameters('activeDirectorySolution')]"
+          },
+          "artifactsUri": {
+            "value": "[parameters('artifactsUri')]"
+          },
+          "automationAccountName": {
+            "value": "[parameters('namingConvention').automationAccount]"
+          },
+          "availability": {
+            "value": "[parameters('availability')]"
+          },
+          "azureFilesPrivateDnsZoneResourceId": {
+            "value": "[parameters('azureFilesPrivateDnsZoneResourceId')]"
+          },
+          "deploymentNameSuffix": {
+            "value": "[parameters('deploymentNameSuffix')]"
+          },
+          "deploymentUserAssignedIdentityClientId": {
+            "value": "[parameters('deploymentUserAssignedIdentityClientId')]"
+          },
+          "domainJoinPassword": {
+            "value": "[parameters('domainJoinPassword')]"
+          },
+          "domainJoinUserPrincipalName": {
+            "value": "[parameters('domainJoinUserPrincipalName')]"
+          },
+          "enableRecoveryServices": {
+            "value": "[parameters('recoveryServices')]"
+          },
+          "encryptionUserAssignedIdentityResourceId": {
+            "value": "[parameters('encryptionUserAssignedIdentityResourceId')]"
+          },
+          "environmentAbbreviation": {
+            "value": "[parameters('environmentAbbreviation')]"
+          },
+          "fileShares": {
+            "value": "[parameters('fileShares')]"
+          },
+          "fslogixContainerType": {
+            "value": "[parameters('fslogixContainerType')]"
+          },
+          "fslogixShareSizeInGB": {
+            "value": "[parameters('fslogixShareSizeInGB')]"
+          },
+          "fslogixStorageService": {
+            "value": "[parameters('fslogixStorageService')]"
+          },
+          "hostPoolType": {
+            "value": "[parameters('hostPoolType')]"
+          },
+          "identifier": {
+            "value": "[parameters('identifier')]"
+          },
+          "keyVaultUri": {
+            "value": "[parameters('keyVaultUri')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "managementVirtualMachineName": {
+            "value": "[parameters('managementVirtualMachineName')]"
+          },
+          "netbios": {
+            "value": "[parameters('netbios')]"
+          },
+          "organizationalUnitPath": {
+            "value": "[parameters('organizationalUnitPath')]"
+          },
+          "recoveryServicesVaultName": {
+            "value": "[parameters('namingConvention').recoveryServicesVault]"
+          },
+          "resourceGroupManagement": {
+            "value": "[parameters('resourceGroupManagement')]"
+          },
+          "resourceGroupStorage": {
+            "value": "[parameters('resourceGroupStorage')]"
+          },
+          "securityPrincipalNames": {
+            "value": "[parameters('securityPrincipalNames')]"
+          },
+          "securityPrincipalObjectIds": {
+            "value": "[parameters('securityPrincipalObjectIds')]"
+          },
+          "serviceName": {
+            "value": "[parameters('serviceToken')]"
+          },
+          "storageAccountNamePrefix": {
+            "value": "[parameters('namingConvention').storageAccount]"
+          },
+          "storageAccountNetworkInterfaceNamePrefix": {
+            "value": "[parameters('namingConvention').storageAccountNetworkInterface]"
+          },
+          "storageAccountPrivateEndpointNamePrefix": {
+            "value": "[parameters('namingConvention').storageAccountPrivateEndpoint]"
+          },
+          "storageCount": {
+            "value": "[parameters('storageCount')]"
+          },
+          "storageEncryptionKeyName": {
+            "value": "[parameters('storageEncryptionKeyName')]"
+          },
+          "storageIndex": {
+            "value": "[parameters('storageIndex')]"
+          },
+          "storageService": {
+            "value": "[parameters('storageService')]"
+          },
+          "storageSku": {
+            "value": "[parameters('storageSku')]"
+          },
+          "subnetResourceId": {
+            "value": "[parameters('subnetResourceId')]"
+          },
+          "tagsAutomationAccounts": {
+            "value": "[variables('tagsAutomationAccounts')]"
+          },
+          "tagsPrivateEndpoints": {
+            "value": "[variables('tagsPrivateEndpoints')]"
+          },
+          "tagsRecoveryServicesVault": {
+            "value": "[variables('tagsRecoveryServicesVault')]"
+          },
+          "tagsStorageAccounts": {
+            "value": "[variables('tagsStorageAccounts')]"
+          },
+          "tagsVirtualMachines": {
+            "value": "[variables('tagsVirtualMachines')]"
+          },
+          "timeZone": {
+            "value": "[parameters('timeZone')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.29.47.4906",
+              "templateHash": "4295038748137416254"
+            }
+          },
+          "parameters": {
+            "activeDirectorySolution": {
+              "type": "string"
+            },
+            "artifactsUri": {
+              "type": "string"
+            },
+            "automationAccountName": {
+              "type": "string"
+            },
+            "availability": {
+              "type": "string"
+            },
+            "azureFilesPrivateDnsZoneResourceId": {
+              "type": "string"
+            },
+            "deploymentNameSuffix": {
+              "type": "string"
+            },
+            "deploymentUserAssignedIdentityClientId": {
+              "type": "string"
+            },
+            "domainJoinPassword": {
+              "type": "securestring"
+            },
+            "domainJoinUserPrincipalName": {
+              "type": "string"
+            },
+            "enableRecoveryServices": {
+              "type": "bool"
+            },
+            "encryptionUserAssignedIdentityResourceId": {
+              "type": "string"
+            },
+            "environmentAbbreviation": {
+              "type": "string"
+            },
+            "fileShares": {
+              "type": "array"
+            },
+            "fslogixShareSizeInGB": {
+              "type": "int"
+            },
+            "fslogixContainerType": {
+              "type": "string"
+            },
+            "fslogixStorageService": {
+              "type": "string"
+            },
+            "hostPoolType": {
+              "type": "string"
+            },
+            "identifier": {
+              "type": "string"
+            },
+            "keyVaultUri": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "managementVirtualMachineName": {
+              "type": "string"
+            },
+            "netbios": {
+              "type": "string"
+            },
+            "organizationalUnitPath": {
+              "type": "string"
+            },
+            "recoveryServicesVaultName": {
+              "type": "string"
+            },
+            "resourceGroupManagement": {
+              "type": "string"
+            },
+            "resourceGroupStorage": {
+              "type": "string"
+            },
+            "securityPrincipalObjectIds": {
+              "type": "array"
+            },
+            "securityPrincipalNames": {
+              "type": "array"
+            },
+            "serviceName": {
+              "type": "string"
+            },
+            "storageAccountNamePrefix": {
+              "type": "string",
+              "minLength": 3
+            },
+            "storageAccountNetworkInterfaceNamePrefix": {
+              "type": "string"
+            },
+            "storageAccountPrivateEndpointNamePrefix": {
+              "type": "string"
+            },
+            "storageCount": {
+              "type": "int"
+            },
+            "storageEncryptionKeyName": {
+              "type": "string"
+            },
+            "storageIndex": {
+              "type": "int"
+            },
+            "storageSku": {
+              "type": "string"
+            },
+            "storageService": {
+              "type": "string"
+            },
+            "subnetResourceId": {
+              "type": "string"
+            },
+            "tagsAutomationAccounts": {
+              "type": "object"
+            },
+            "tagsPrivateEndpoints": {
+              "type": "object"
+            },
+            "tagsRecoveryServicesVault": {
+              "type": "object"
+            },
+            "tagsStorageAccounts": {
+              "type": "object"
+            },
+            "tagsVirtualMachines": {
+              "type": "object"
+            },
+            "timeZone": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "roleDefinitionId": "0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb",
+            "smbMultiChannel": {
+              "multichannel": {
+                "enabled": true
+              }
+            },
+            "smbSettings": {
+              "versions": "SMB3.1.1;",
+              "authenticationMethods": "NTLMv2;Kerberos;",
+              "kerberosTicketEncryption": "AES-256;",
+              "channelEncryption": "AES-128-GCM;AES-256-GCM;"
+            },
+            "storageRedundancy": "[if(equals(parameters('availability'), 'availabilityZones'), '_ZRS', '_LRS')]",
+            "uniqueToken": "[uniqueString(parameters('identifier'), parameters('environmentAbbreviation'), subscription().subscriptionId)]"
+          },
+          "resources": [
+            {
+              "copy": {
+                "name": "storageAccounts",
+                "count": "[length(range(0, parameters('storageCount')))]"
+              },
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2022-09-01",
+              "name": "[take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24)]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tagsStorageAccounts')]",
+              "sku": {
+                "name": "[format('{0}{1}', parameters('storageSku'), variables('storageRedundancy'))]"
+              },
+              "kind": "[if(equals(parameters('storageSku'), 'Standard'), 'StorageV2', 'FileStorage')]",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('encryptionUserAssignedIdentityResourceId'))]": {}
+                }
+              },
+              "properties": {
+                "accessTier": "Hot",
+                "allowBlobPublicAccess": false,
+                "allowCrossTenantReplication": false,
+                "allowedCopyScope": "PrivateLink",
+                "allowSharedKeyAccess": true,
+                "azureFilesIdentityBasedAuthentication": {
+                  "directoryServiceOptions": "[if(equals(parameters('activeDirectorySolution'), 'MicrosoftEntraDomainServices'), 'AADDS', 'None')]"
+                },
+                "defaultToOAuthAuthentication": false,
+                "dnsEndpointType": "Standard",
+                "encryption": {
+                  "identity": {
+                    "userAssignedIdentity": "[parameters('encryptionUserAssignedIdentityResourceId')]"
+                  },
+                  "requireInfrastructureEncryption": true,
+                  "keyvaultproperties": {
+                    "keyvaulturi": "[parameters('keyVaultUri')]",
+                    "keyname": "[parameters('storageEncryptionKeyName')]"
+                  },
+                  "services": "[if(equals(parameters('storageSku'), 'Standard'), createObject('file', createObject('keyType', 'Account', 'enabled', true()), 'table', createObject('keyType', 'Account', 'enabled', true()), 'queue', createObject('keyType', 'Account', 'enabled', true()), 'blob', createObject('keyType', 'Account', 'enabled', true())), createObject('file', createObject('keyType', 'Account', 'enabled', true())))]",
+                  "keySource": "Microsoft.KeyVault"
+                },
+                "largeFileSharesState": "[if(equals(parameters('storageSku'), 'Standard'), 'Enabled', null())]",
+                "minimumTlsVersion": "TLS1_2",
+                "networkAcls": {
+                  "bypass": "AzureServices",
+                  "virtualNetworkRules": [],
+                  "ipRules": [],
+                  "defaultAction": "Deny"
+                },
+                "publicNetworkAccess": "Disabled",
+                "supportsHttpsTrafficOnly": true
+              }
+            },
+            {
+              "copy": {
+                "name": "roleAssignment",
+                "count": "[length(range(0, parameters('storageCount')))]"
+              },
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.Storage/storageAccounts/{0}', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24))]",
+              "name": "[guid(parameters('securityPrincipalObjectIds')[range(0, parameters('storageCount'))[copyIndex()]], variables('roleDefinitionId'), resourceId('Microsoft.Storage/storageAccounts', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24)))]",
+              "properties": {
+                "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitionId'))]",
+                "principalId": "[parameters('securityPrincipalObjectIds')[range(0, parameters('storageCount'))[copyIndex()]]]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "fileServices",
+                "count": "[length(range(0, parameters('storageCount')))]"
+              },
+              "type": "Microsoft.Storage/storageAccounts/fileServices",
+              "apiVersion": "2022-09-01",
+              "name": "[format('{0}/{1}', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24), 'default')]",
+              "properties": {
+                "protocolSettings": {
+                  "smb": "[if(equals(parameters('storageSku'), 'Standard'), variables('smbSettings'), union(variables('smbSettings'), variables('smbMultiChannel')))]"
+                },
+                "shareDeleteRetentionPolicy": {
+                  "enabled": false
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "privateEndpoints",
+                "count": "[length(range(0, parameters('storageCount')))]"
+              },
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-04-01",
+              "name": "[format('{0}-{1}', replace(parameters('storageAccountPrivateEndpointNamePrefix'), parameters('serviceName'), 'file'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tagsPrivateEndpoints')]",
+              "properties": {
+                "customNetworkInterfaceName": "[format('{0}-{1}', replace(parameters('storageAccountNetworkInterfaceNamePrefix'), parameters('serviceName'), 'file'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0'))]",
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "[format('{0}-{1}', replace(parameters('storageAccountPrivateEndpointNamePrefix'), parameters('serviceName'), 'file'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0'))]",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId('Microsoft.Storage/storageAccounts', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24))]",
+                      "groupIds": [
+                        "file"
+                      ]
+                    }
+                  }
+                ],
+                "subnet": {
+                  "id": "[parameters('subnetResourceId')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24))]"
+              ]
+            },
+            {
+              "copy": {
+                "name": "privateDnsZoneGroups",
+                "count": "[length(range(0, parameters('storageCount')))]"
+              },
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2021-08-01",
+              "name": "[format('{0}/{1}', format('{0}-{1}', replace(parameters('storageAccountPrivateEndpointNamePrefix'), parameters('serviceName'), 'file'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0')), format('{0}-{1}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0')))]",
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "privateDnsZoneId": "[parameters('azureFilesPrivateDnsZoneResourceId')]"
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', format('{0}-{1}', replace(parameters('storageAccountPrivateEndpointNamePrefix'), parameters('serviceName'), 'file'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0')))]",
+                "storageAccounts"
+              ]
+            },
+            {
+              "copy": {
+                "name": "shares",
+                "count": "[length(range(0, parameters('storageCount')))]"
+              },
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('deploy-file-shares-{0}-{1}', range(0, parameters('storageCount'))[copyIndex()], parameters('deploymentNameSuffix'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "fileShares": {
+                    "value": "[parameters('fileShares')]"
+                  },
+                  "fslogixShareSizeInGB": {
+                    "value": "[parameters('fslogixShareSizeInGB')]"
+                  },
+                  "storageAccountName": {
+                    "value": "[take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24)]"
+                  },
+                  "storageSku": {
+                    "value": "[parameters('storageSku')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.29.47.4906",
+                      "templateHash": "9292590375464354201"
+                    }
+                  },
+                  "parameters": {
+                    "fileShares": {
+                      "type": "array"
+                    },
+                    "fslogixShareSizeInGB": {
+                      "type": "int"
+                    },
+                    "storageAccountName": {
+                      "type": "string"
+                    },
+                    "storageSku": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "copy": {
+                        "name": "shares",
+                        "count": "[length(range(0, length(parameters('fileShares'))))]"
+                      },
+                      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('fileShares')[range(0, length(parameters('fileShares')))[copyIndex()]])]",
+                      "properties": {
+                        "accessTier": "[if(equals(parameters('storageSku'), 'Premium'), 'Premium', 'TransactionOptimized')]",
+                        "shareQuota": "[parameters('fslogixShareSizeInGB')]",
+                        "enabledProtocols": "SMB"
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "roleAssignment",
+                "[resourceId('Microsoft.Storage/storageAccounts', take(format('{0}{1}{2}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'), variables('uniqueToken')), 24))]"
+              ]
+            },
+            {
+              "condition": "[contains(parameters('activeDirectorySolution'), 'DomainServices')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('deploy-fslogix-ntfs-permissions-{0}', parameters('deploymentNameSuffix'))]",
+              "resourceGroup": "[parameters('resourceGroupManagement')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "fileUris": {
+                    "value": [
+                      "[format('{0}Set-NtfsPermissions.ps1', parameters('artifactsUri'))]"
+                    ]
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "parameters": {
+                    "value": "[format('-domainJoinPassword \"{0}\" -domainJoinUserPrincipalName {1} -activeDirectorySolution {2} -Environment {3} -fslogixContainerType {4} -netbios {5} -organizationalUnitPath \"{6}\" -securityPrincipalNames \"{7}\" -StorageAccountPrefix {8} -StorageAccountResourceGroupName {9} -storageCount {10} -storageIndex {11} -storageService {12} -StorageSuffix {13} -SubscriptionId {14} -TenantId {15} -UniqueToken {16} -UserAssignedIdentityClientId {17}', parameters('domainJoinPassword'), parameters('domainJoinUserPrincipalName'), parameters('activeDirectorySolution'), environment().name, parameters('fslogixContainerType'), parameters('netbios'), parameters('organizationalUnitPath'), parameters('securityPrincipalNames'), parameters('storageAccountNamePrefix'), parameters('resourceGroupStorage'), parameters('storageCount'), parameters('storageIndex'), parameters('storageService'), environment().suffixes.storage, subscription().subscriptionId, subscription().tenantId, variables('uniqueToken'), parameters('deploymentUserAssignedIdentityClientId'))]"
+                  },
+                  "scriptFileName": {
+                    "value": "Set-NtfsPermissions.ps1"
+                  },
+                  "tags": {
+                    "value": "[parameters('tagsVirtualMachines')]"
+                  },
+                  "userAssignedIdentityClientId": {
+                    "value": "[parameters('deploymentUserAssignedIdentityClientId')]"
+                  },
+                  "virtualMachineName": {
+                    "value": "[parameters('managementVirtualMachineName')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.29.47.4906",
+                      "templateHash": "1897972445567182190"
+                    }
+                  },
+                  "parameters": {
+                    "fileUris": {
+                      "type": "array"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "parameters": {
+                      "type": "securestring"
+                    },
+                    "scriptFileName": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "defaultValue": "[utcNow('yyyyMMddhhmmss')]"
+                    },
+                    "userAssignedIdentityClientId": {
+                      "type": "string"
+                    },
+                    "virtualMachineName": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Compute/virtualMachines/extensions",
+                      "apiVersion": "2021-03-01",
+                      "name": "[format('{0}/{1}', parameters('virtualMachineName'), 'CustomScriptExtension')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "publisher": "Microsoft.Compute",
+                        "type": "CustomScriptExtension",
+                        "typeHandlerVersion": "1.10",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                          "timestamp": "[parameters('timestamp')]"
+                        },
+                        "protectedSettings": {
+                          "commandToExecute": "[format('powershell -ExecutionPolicy Unrestricted -File {0} {1}', parameters('scriptFileName'), parameters('parameters'))]",
+                          "fileUris": "[parameters('fileUris')]",
+                          "managedIdentity": {
+                            "clientId": "[parameters('userAssignedIdentityClientId')]"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "value": {
+                      "type": "object",
+                      "value": "[json(filter(reference(resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('virtualMachineName'), 'CustomScriptExtension'), '2021-03-01').instanceView.substatuses, lambda('item', equals(lambdaVariables('item').code, 'ComponentStatus/StdOut/succeeded')))[0].message)]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "privateDnsZoneGroups",
+                "privateEndpoints",
+                "shares"
+              ]
+            },
+            {
+              "condition": "[and(parameters('enableRecoveryServices'), contains(parameters('hostPoolType'), 'Pooled'))]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('deploy-backup-azure-files-{0}', parameters('deploymentNameSuffix'))]",
+              "resourceGroup": "[parameters('resourceGroupManagement')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "deploymentNameSuffix": {
+                    "value": "[parameters('deploymentNameSuffix')]"
+                  },
+                  "fileShares": {
+                    "value": "[parameters('fileShares')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "recoveryServicesVaultName": {
+                    "value": "[parameters('recoveryServicesVaultName')]"
+                  },
+                  "resourceGroupStorage": {
+                    "value": "[parameters('resourceGroupStorage')]"
+                  },
+                  "storageAccountNamePrefix": {
+                    "value": "[parameters('storageAccountNamePrefix')]"
+                  },
+                  "storageCount": {
+                    "value": "[parameters('storageCount')]"
+                  },
+                  "storageIndex": {
+                    "value": "[parameters('storageIndex')]"
+                  },
+                  "tagsRecoveryServicesVault": {
+                    "value": "[parameters('tagsRecoveryServicesVault')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.29.47.4906",
+                      "templateHash": "12166773491247934484"
+                    }
+                  },
+                  "parameters": {
+                    "deploymentNameSuffix": {
+                      "type": "string"
+                    },
+                    "fileShares": {
+                      "type": "array"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "recoveryServicesVaultName": {
+                      "type": "string"
+                    },
+                    "resourceGroupStorage": {
+                      "type": "string"
+                    },
+                    "storageAccountNamePrefix": {
+                      "type": "string"
+                    },
+                    "storageCount": {
+                      "type": "int"
+                    },
+                    "storageIndex": {
+                      "type": "int"
+                    },
+                    "tagsRecoveryServicesVault": {
+                      "type": "object"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "copy": {
+                        "name": "protectionContainers",
+                        "count": "[length(range(0, parameters('storageCount')))]"
+                      },
+                      "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers",
+                      "apiVersion": "2022-03-01",
+                      "name": "[format('{0}/Azure/storagecontainer;Storage;{1};{2}{3}', parameters('recoveryServicesVaultName'), parameters('resourceGroupStorage'), parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0'))]",
+                      "properties": {
+                        "backupManagementType": "AzureStorage",
+                        "containerType": "StorageContainer",
+                        "sourceResourceId": "[resourceId(parameters('resourceGroupStorage'), 'Microsoft.Storage/storageAccounts', format('{0}{1}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0')))]"
+                      }
+                    },
+                    {
+                      "copy": {
+                        "name": "protectedItems_fileShares",
+                        "count": "[length(range(0, parameters('storageCount')))]"
+                      },
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('backup-file-shares-{0}-{1}', add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), parameters('deploymentNameSuffix'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "fileShares": {
+                            "value": "[parameters('fileShares')]"
+                          },
+                          "location": {
+                            "value": "[parameters('location')]"
+                          },
+                          "protectionContainerName": {
+                            "value": "[format('{0}/Azure/storagecontainer;Storage;{1};{2}{3}', parameters('recoveryServicesVaultName'), parameters('resourceGroupStorage'), parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0'))]"
+                          },
+                          "policyId": {
+                            "value": "[resourceId('Microsoft.RecoveryServices/vaults/backupPolicies', parameters('recoveryServicesVaultName'), 'AvdPolicyStorage')]"
+                          },
+                          "sourceResourceId": {
+                            "value": "[resourceId(parameters('resourceGroupStorage'), 'Microsoft.Storage/storageAccounts', format('{0}{1}', parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[copyIndex()], parameters('storageIndex')), 2, '0')))]"
+                          },
+                          "tags": {
+                            "value": "[parameters('tagsRecoveryServicesVault')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "2095475027595413136"
+                            }
+                          },
+                          "parameters": {
+                            "fileShares": {
+                              "type": "array"
+                            },
+                            "location": {
+                              "type": "string"
+                            },
+                            "policyId": {
+                              "type": "string"
+                            },
+                            "protectionContainerName": {
+                              "type": "string"
+                            },
+                            "sourceResourceId": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "protectedItems_FileShare",
+                                "count": "[length(parameters('fileShares'))]"
+                              },
+                              "condition": "[contains(parameters('fileShares')[copyIndex()], 'profile')]",
+                              "type": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+                              "apiVersion": "2022-03-01",
+                              "name": "[format('{0}/AzureFileShare;{1}', parameters('protectionContainerName'), parameters('fileShares')[copyIndex()])]",
+                              "location": "[parameters('location')]",
+                              "tags": "[parameters('tags')]",
+                              "properties": {
+                                "protectedItemType": "AzureFileShareProtectedItem",
+                                "policyId": "[parameters('policyId')]",
+                                "sourceResourceId": "[parameters('sourceResourceId')]"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers', split(format('{0}/Azure/storagecontainer;Storage;{1};{2}{3}', parameters('recoveryServicesVaultName'), parameters('resourceGroupStorage'), parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0')), '/')[0], split(format('{0}/Azure/storagecontainer;Storage;{1};{2}{3}', parameters('recoveryServicesVaultName'), parameters('resourceGroupStorage'), parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0')), '/')[1], split(format('{0}/Azure/storagecontainer;Storage;{1};{2}{3}', parameters('recoveryServicesVaultName'), parameters('resourceGroupStorage'), parameters('storageAccountNamePrefix'), padLeft(add(range(0, parameters('storageCount'))[range(0, parameters('storageCount'))[copyIndex()]], parameters('storageIndex')), 2, '0')), '/')[2])]"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "shares"
+              ]
+            },
+            {
+              "condition": "[and(equals(parameters('fslogixStorageService'), 'AzureFiles Premium'), greater(parameters('storageCount'), 0))]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('deploy-file-share-scaling-{0}', parameters('deploymentNameSuffix'))]",
+              "resourceGroup": "[parameters('resourceGroupManagement')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "artifactsUri": {
+                    "value": "[parameters('artifactsUri')]"
+                  },
+                  "automationAccountName": {
+                    "value": "[parameters('automationAccountName')]"
+                  },
+                  "deploymentNameSuffix": {
+                    "value": "[parameters('deploymentNameSuffix')]"
+                  },
+                  "deploymentUserAssignedIdentityClientId": {
+                    "value": "[parameters('deploymentUserAssignedIdentityClientId')]"
+                  },
+                  "fslogixContainerType": {
+                    "value": "[parameters('fslogixContainerType')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "managementVirtualMachineName": {
+                    "value": "[parameters('managementVirtualMachineName')]"
+                  },
+                  "storageAccountNamePrefix": {
+                    "value": "[parameters('storageAccountNamePrefix')]"
+                  },
+                  "storageCount": {
+                    "value": "[parameters('storageCount')]"
+                  },
+                  "storageIndex": {
+                    "value": "[parameters('storageIndex')]"
+                  },
+                  "storageResourceGroupName": {
+                    "value": "[parameters('resourceGroupStorage')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tagsAutomationAccounts')]"
+                  },
+                  "timeZone": {
+                    "value": "[parameters('timeZone')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.29.47.4906",
+                      "templateHash": "13109916327069907060"
+                    }
+                  },
+                  "parameters": {
+                    "artifactsUri": {
+                      "type": "string"
+                    },
+                    "automationAccountName": {
+                      "type": "string"
+                    },
+                    "deploymentNameSuffix": {
+                      "type": "string"
+                    },
+                    "deploymentUserAssignedIdentityClientId": {
+                      "type": "string"
+                    },
+                    "fslogixContainerType": {
+                      "type": "string"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "managementVirtualMachineName": {
+                      "type": "string"
+                    },
+                    "storageAccountNamePrefix": {
+                      "type": "string"
+                    },
+                    "storageCount": {
+                      "type": "int"
+                    },
+                    "storageIndex": {
+                      "type": "int"
+                    },
+                    "storageResourceGroupName": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "timeZone": {
+                      "type": "string"
+                    }
+                  },
+                  "variables": {
+                    "runbookFileName": "Set-FileShareScaling.ps1",
+                    "scriptFileName": "Set-AutomationRunbook.ps1",
+                    "subscriptionId": "[subscription().subscriptionId]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('deploy-runbook-{0}', parameters('deploymentNameSuffix'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "fileUris": {
+                            "value": [
+                              "[format('{0}{1}', parameters('artifactsUri'), variables('runbookFileName'))]",
+                              "[format('{0}{1}', parameters('artifactsUri'), variables('scriptFileName'))]"
+                            ]
+                          },
+                          "location": {
+                            "value": "[parameters('location')]"
+                          },
+                          "parameters": {
+                            "value": "[format('-AutomationAccountName {0} -Environment {1} -ResourceGroupName {2} -RunbookFileName {3} -SubscriptionId {4} -TenantId {5} -UserAssignedIdentityClientId {6}', parameters('automationAccountName'), environment().name, resourceGroup().name, variables('runbookFileName'), subscription().subscriptionId, tenant().tenantId, parameters('deploymentUserAssignedIdentityClientId'))]"
+                          },
+                          "scriptFileName": {
+                            "value": "[variables('scriptFileName')]"
+                          },
+                          "tags": {
+                            "value": "[parameters('tags')]"
+                          },
+                          "userAssignedIdentityClientId": {
+                            "value": "[parameters('deploymentUserAssignedIdentityClientId')]"
+                          },
+                          "virtualMachineName": {
+                            "value": "[parameters('managementVirtualMachineName')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "1897972445567182190"
+                            }
+                          },
+                          "parameters": {
+                            "fileUris": {
+                              "type": "array"
+                            },
+                            "location": {
+                              "type": "string"
+                            },
+                            "parameters": {
+                              "type": "securestring"
+                            },
+                            "scriptFileName": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "timestamp": {
+                              "type": "string",
+                              "defaultValue": "[utcNow('yyyyMMddhhmmss')]"
+                            },
+                            "userAssignedIdentityClientId": {
+                              "type": "string"
+                            },
+                            "virtualMachineName": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Compute/virtualMachines/extensions",
+                              "apiVersion": "2021-03-01",
+                              "name": "[format('{0}/{1}', parameters('virtualMachineName'), 'CustomScriptExtension')]",
+                              "location": "[parameters('location')]",
+                              "tags": "[parameters('tags')]",
+                              "properties": {
+                                "publisher": "Microsoft.Compute",
+                                "type": "CustomScriptExtension",
+                                "typeHandlerVersion": "1.10",
+                                "autoUpgradeMinorVersion": true,
+                                "settings": {
+                                  "timestamp": "[parameters('timestamp')]"
+                                },
+                                "protectedSettings": {
+                                  "commandToExecute": "[format('powershell -ExecutionPolicy Unrestricted -File {0} {1}', parameters('scriptFileName'), parameters('parameters'))]",
+                                  "fileUris": "[parameters('fileUris')]",
+                                  "managedIdentity": {
+                                    "clientId": "[parameters('userAssignedIdentityClientId')]"
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "value": {
+                              "type": "object",
+                              "value": "[json(filter(reference(resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('virtualMachineName'), 'CustomScriptExtension'), '2021-03-01').instanceView.substatuses, lambda('item', equals(lambdaVariables('item').code, 'ComponentStatus/StdOut/succeeded')))[0].message)]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "copy": {
+                        "name": "schedules",
+                        "count": "[length(range(parameters('storageIndex'), parameters('storageCount')))]"
+                      },
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('deploy-schedules-{0}-{1}', range(parameters('storageIndex'), parameters('storageCount'))[copyIndex()], parameters('deploymentNameSuffix'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "automationAccountName": {
+                            "value": "[parameters('automationAccountName')]"
+                          },
+                          "fslogixContainerType": {
+                            "value": "[parameters('fslogixContainerType')]"
+                          },
+                          "storageAccountName": {
+                            "value": "[format('{0}{1}', parameters('storageAccountNamePrefix'), padLeft(range(parameters('storageIndex'), parameters('storageCount'))[copyIndex()], 2, '0'))]"
+                          },
+                          "timeZone": {
+                            "value": "[parameters('timeZone')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "14573879268973535875"
+                            }
+                          },
+                          "parameters": {
+                            "automationAccountName": {
+                              "type": "string"
+                            },
+                            "fslogixContainerType": {
+                              "type": "string"
+                            },
+                            "storageAccountName": {
+                              "type": "string"
+                            },
+                            "time": {
+                              "type": "string",
+                              "defaultValue": "[utcNow()]"
+                            },
+                            "timeZone": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "schedules_ProfileContainers",
+                                "count": "[length(range(0, 4))]"
+                              },
+                              "type": "Microsoft.Automation/automationAccounts/schedules",
+                              "apiVersion": "2022-08-08",
+                              "name": "[format('{0}/{1}', parameters('automationAccountName'), format('{0}_ProfileContainers_{1}min', parameters('storageAccountName'), mul(add(range(0, 4)[copyIndex()], 1), 15)))]",
+                              "properties": {
+                                "advancedSchedule": {},
+                                "description": null,
+                                "expiryTime": null,
+                                "frequency": "Hour",
+                                "interval": 1,
+                                "startTime": "[dateTimeAdd(parameters('time'), format('PT{0}M', mul(add(range(0, 4)[copyIndex()], 1), 15)))]",
+                                "timeZone": "[parameters('timeZone')]"
+                              }
+                            },
+                            {
+                              "copy": {
+                                "name": "schedules_OfficeContainers",
+                                "count": "[length(range(0, 4))]"
+                              },
+                              "condition": "[contains(parameters('fslogixContainerType'), 'Office')]",
+                              "type": "Microsoft.Automation/automationAccounts/schedules",
+                              "apiVersion": "2022-08-08",
+                              "name": "[format('{0}/{1}', parameters('automationAccountName'), format('{0}_OfficeContainers_{1}min', parameters('storageAccountName'), mul(add(range(0, 4)[copyIndex()], 1), 15)))]",
+                              "properties": {
+                                "advancedSchedule": {},
+                                "description": null,
+                                "expiryTime": null,
+                                "frequency": "Hour",
+                                "interval": 1,
+                                "startTime": "[dateTimeAdd(parameters('time'), format('PT{0}M', mul(add(range(0, 4)[copyIndex()], 1), 15)))]",
+                                "timeZone": "[parameters('timeZone')]"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "copy": {
+                        "name": "jobSchedules",
+                        "count": "[length(range(parameters('storageIndex'), parameters('storageCount')))]"
+                      },
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('deploy-job-schedules-{0}-{1}', range(parameters('storageIndex'), parameters('storageCount'))[copyIndex()], parameters('deploymentNameSuffix'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "automationAccountName": {
+                            "value": "[parameters('automationAccountName')]"
+                          },
+                          "environment": {
+                            "value": "[environment().name]"
+                          },
+                          "fslogixContainerType": {
+                            "value": "[parameters('fslogixContainerType')]"
+                          },
+                          "runbookName": {
+                            "value": "[replace(variables('runbookFileName'), '.ps1', '')]"
+                          },
+                          "resourceGroupName": {
+                            "value": "[parameters('storageResourceGroupName')]"
+                          },
+                          "storageAccountName": {
+                            "value": "[format('{0}{1}', parameters('storageAccountNamePrefix'), padLeft(range(parameters('storageIndex'), parameters('storageCount'))[copyIndex()], 2, '0'))]"
+                          },
+                          "subscriptionId": {
+                            "value": "[variables('subscriptionId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "13412734519431227711"
+                            }
+                          },
+                          "parameters": {
+                            "automationAccountName": {
+                              "type": "string"
+                            },
+                            "environment": {
+                              "type": "string"
+                            },
+                            "fslogixContainerType": {
+                              "type": "string"
+                            },
+                            "resourceGroupName": {
+                              "type": "string"
+                            },
+                            "runbookName": {
+                              "type": "string"
+                            },
+                            "storageAccountName": {
+                              "type": "string"
+                            },
+                            "subscriptionId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string",
+                              "defaultValue": "[utcNow('yyyyMMddHHmmss')]"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "jobSchedules_ProfileContainers",
+                                "count": "[length(range(0, 4))]"
+                              },
+                              "type": "Microsoft.Automation/automationAccounts/jobSchedules",
+                              "apiVersion": "2022-08-08",
+                              "name": "[format('{0}/{1}', parameters('automationAccountName'), guid(parameters('timestamp'), parameters('runbookName'), parameters('storageAccountName'), 'ProfileContainers', string(range(0, 4)[copyIndex()])))]",
+                              "properties": {
+                                "parameters": {
+                                  "environment": "[parameters('environment')]",
+                                  "FileShareName": "profile-containers",
+                                  "resourceGroupName": "[parameters('resourceGroupName')]",
+                                  "storageAccountName": "[parameters('storageAccountName')]",
+                                  "subscriptionId": "[parameters('subscriptionId')]"
+                                },
+                                "runbook": {
+                                  "name": "[parameters('runbookName')]"
+                                },
+                                "runOn": null,
+                                "schedule": {
+                                  "name": "[format('{0}_ProfileContainers_{1}min', parameters('storageAccountName'), mul(add(range(0, 4)[copyIndex()], 1), 15))]"
+                                }
+                              }
+                            },
+                            {
+                              "copy": {
+                                "name": "jobSchedules_OfficeContainers",
+                                "count": "[length(range(0, 4))]"
+                              },
+                              "condition": "[contains(parameters('fslogixContainerType'), 'Office')]",
+                              "type": "Microsoft.Automation/automationAccounts/jobSchedules",
+                              "apiVersion": "2022-08-08",
+                              "name": "[format('{0}/{1}', parameters('automationAccountName'), guid(parameters('timestamp'), parameters('runbookName'), parameters('storageAccountName'), 'OfficeContainers', string(range(0, 4)[copyIndex()])))]",
+                              "properties": {
+                                "parameters": {
+                                  "environment": "[parameters('environment')]",
+                                  "FileShareName": "office-containers",
+                                  "resourceGroupName": "[parameters('resourceGroupName')]",
+                                  "storageAccountName": "[parameters('storageAccountName')]",
+                                  "subscriptionId": "[parameters('subscriptionId')]"
+                                },
+                                "runbook": {
+                                  "name": "[parameters('runbookName')]"
+                                },
+                                "runOn": null,
+                                "schedule": {
+                                  "name": "[format('{0}_OfficeContainers_{1}min', parameters('storageAccountName'), mul(add(range(0, 4)[copyIndex()], 1), 15))]"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Resources/deployments', format('deploy-runbook-{0}', parameters('deploymentNameSuffix')))]",
+                        "schedules"
+                      ]
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('deploy-role-assignment-storage-{0}', parameters('deploymentNameSuffix'))]",
+                      "resourceGroup": "[parameters('storageResourceGroupName')]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "principalId": {
+                            "value": "[reference(resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName')), '2022-08-08', 'full').identity.principalId]"
+                          },
+                          "principalType": {
+                            "value": "ServicePrincipal"
+                          },
+                          "roleDefinitionId": {
+                            "value": "17d1049b-9a84-46fb-8f53-869881c3d3ab"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "1476792570487351405"
+                            }
+                          },
+                          "parameters": {
+                            "principalId": {
+                              "type": "string"
+                            },
+                            "principalType": {
+                              "type": "string"
+                            },
+                            "roleDefinitionId": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2022-04-01",
+                              "name": "[guid(parameters('principalId'), parameters('roleDefinitionId'), resourceGroup().id)]",
+                              "properties": {
+                                "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', parameters('roleDefinitionId'))]",
+                                "principalId": "[parameters('principalId')]",
+                                "principalType": "[parameters('principalType')]"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupManagement')), 'Microsoft.Resources/deployments', format('deploy-fslogix-ntfs-permissions-{0}', parameters('deploymentNameSuffix')))]"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "netAppShares": {
+      "type": "array",
+      "value": "[if(equals(parameters('storageService'), 'AzureNetAppFiles'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('resourceGroupStorage')), 'Microsoft.Resources/deployments', format('deploy-anf-{0}', parameters('deploymentNameSuffix'))), '2022-09-01').outputs.fileShares.value, createArray('None'))]"
+    }
+  }
+}

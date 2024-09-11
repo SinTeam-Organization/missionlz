@@ -11,6 +11,8 @@ param avdAgentMsiName string
 param batchCount int
 param dataCollectionRuleAssociationName string
 param dataCollectionRuleResourceId string
+param deployFslogix bool
+param deploymentNameSuffix string
 param deploymentUserAssignedidentityClientId string
 param diskEncryptionSetResourceId string
 param diskNamePrefix string
@@ -20,26 +22,23 @@ param domainJoinPassword string
 param domainJoinUserPrincipalName string
 param domainName string
 param enableDrainMode bool
-param fslogix bool
 param fslogixContainerType string
 param hostPoolName string
 param hostPoolType string
-param imageDefinitionResourceId string
 param imageOffer string
 param imagePublisher string
 param imageSku string
+param imageVersionResourceId string
 param location string
 param logAnalyticsWorkspaceName string
 param managementVirtualMachineName string
 param monitoring bool
 param netAppFileShares array
 param networkInterfaceNamePrefix string
-param networkName string
 param organizationalUnitPath string
 param resourceGroupControlPlane string
 param resourceGroupManagement string
-param securityLogAnalyticsWorkspaceResourceId string
-param serviceName string
+param serviceToken string
 param sessionHostCount int
 param sessionHostIndex int
 param storageAccountPrefix string
@@ -47,18 +46,17 @@ param storageCount int
 param storageIndex int
 param storageService string
 param storageSuffix string
-param subnet string
+param subnetResourceId string
 param tagsNetworkInterfaces object
 param tagsVirtualMachines object
-param timestamp string
+param timestamp string = utcNow('yyyyMMddhhmmss')
+param uniqueToken string
 param virtualMachineMonitoringAgent string
 param virtualMachineNamePrefix string
 @secure()
 param virtualMachinePassword string
 param virtualMachineSize string
 param virtualMachineUsername string
-param virtualNetwork string
-param virtualNetworkResourceGroup string
 
 var amdVmSize = contains(amdVmSizes, virtualMachineSize)
 var amdVmSizes = [
@@ -71,15 +69,15 @@ var fslogixExclusions = '"%TEMP%\\*\\*.VHDX";"%Windir%\\TEMP\\*\\*.VHDX"${fslogi
 var fslogixExclusionsCloudCache = contains(fslogixContainerType, 'CloudCache') ? ';"%ProgramData%\\fslogix\\Cache\\*";"%ProgramData%\\fslogix\\Proxy\\*"' : ''
 var fslogixExclusionsOfficeContainers = contains(fslogixContainerType, 'Office') ? ';"${fslogixOfficeShare}";"${fslogixOfficeShare}.lock";"${fslogixOfficeShare}.meta";"${fslogixOfficeShare}.metadata"' : ''
 var fslogixExclusionsProfileContainers = ';"${fslogixProfileShare}";"${fslogixProfileShare}.lock";"${fslogixProfileShare}.meta";"${fslogixProfileShare}.metadata"'
-var fslogixOfficeShare = '\\\\${storageAccountPrefix}??.file.${storageSuffix}\\office-containers\\*\\*.VHDX'
-var fslogixProfileShare = '\\\\${storageAccountPrefix}??.file.${storageSuffix}\\profile-containers\\*\\*.VHDX'
-var imageReference = empty(imageDefinitionResourceId) ? {
+var fslogixOfficeShare = '\\\\${storageAccountToken}.file.${storageSuffix}\\office-containers\\*\\*.VHDX'
+var fslogixProfileShare = '\\\\${storageAccountToken}.file.${storageSuffix}\\profile-containers\\*\\*.VHDX'
+var imageReference = empty(imageVersionResourceId) ? {
   publisher: imagePublisher
   offer: imageOffer
   sku: imageSku
   version: 'latest'
 } : {
-  id: imageDefinitionResourceId
+  id: imageVersionResourceId
 }
 var intune = contains(activeDirectorySolution, 'intuneEnrollment')
 var nvidiaVmSize = contains(nvidiaVmSizes, virtualMachineSize)
@@ -102,20 +100,16 @@ var nvidiaVmSizes = [
   'Standard_NV72ads_A10_v5'
 ]
 var pooledHostPool = (split(hostPoolType, ' ')[0] == 'Pooled')
-var securitylogAnalyticsWorkspaceName = securityMonitoring ? split(securityLogAnalyticsWorkspaceResourceId, '/')[8] : ''
-var securityLogAnalyticsWorkspaceResourceGroupName = securityMonitoring ? split(securityLogAnalyticsWorkspaceResourceId, '/')[4] : resourceGroup().name
-var securityLogAnalyticsWorkspaceSubscriptionId = securityMonitoring ? split(securityLogAnalyticsWorkspaceResourceId, '/')[2] : subscription().subscriptionId
-var securityMonitoring = empty(securityLogAnalyticsWorkspaceResourceId) ? false : true
-var securityWorkspaceKey = securityMonitoring ? listKeys(securityLogAnalyticsWorkspaceResourceId, '2021-06-01').primarySharedKey : 'NotApplicable'
-var sessionHostNamePrefix = replace(virtualMachineNamePrefix, '${serviceName}${networkName}', '')
+var sessionHostNamePrefix = replace(virtualMachineNamePrefix, serviceToken, '')
+var storageAccountToken = take('${storageAccountPrefix}??${uniqueToken}', 24)
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' existing = if (securityMonitoring) {
-  name: securitylogAnalyticsWorkspaceName
-  scope: resourceGroup(securityLogAnalyticsWorkspaceSubscriptionId, securityLogAnalyticsWorkspaceResourceGroupName)
+resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' existing = {
+  name: hostPoolName
+  scope: resourceGroup(subscription().subscriptionId, resourceGroupControlPlane)
 }
 
 resource networkInterface 'Microsoft.Network/networkInterfaces@2020-05-01' = [for i in range(0, sessionHostCount): {
-  name: '${replace(networkInterfaceNamePrefix, '-${serviceName}', '')}-${padLeft((i + sessionHostIndex), 4, '0')}'
+  name: '${replace(networkInterfaceNamePrefix, '-${serviceToken}', '')}-${padLeft((i + sessionHostIndex), 4, '0')}'
   location: location
   tags: tagsNetworkInterfaces
   properties: {
@@ -125,7 +119,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-05-01' = [fo
         properties: {
           privateIPAllocationMethod: 'Dynamic'
           subnet: {
-            id: resourceId(subscription().subscriptionId, virtualNetworkResourceGroup, 'Microsoft.Network/virtualNetworks/subnets', virtualNetwork, subnet)
+            id: subnetResourceId
           }
           primary: true
           privateIPAddressVersion: 'IPv4'
@@ -152,7 +146,7 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-03-01' = [for i 
   }
   properties: {
     availabilitySet: availability == 'AvailabilitySets' ? {
-      id: resourceId('Microsoft.Compute/availabilitySets', '${availabilitySetNamePrefix}${padLeft((i + sessionHostIndex) / 200, 2, '0')}')
+      id: resourceId('Microsoft.Compute/availabilitySets', '${availabilitySetNamePrefix}-${padLeft((i + sessionHostIndex) / 200, 2, '0')}')
     } : null
     hardwareProfile: {
       vmSize: virtualMachineSize
@@ -160,7 +154,7 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2021-03-01' = [for i 
     storageProfile: {
       imageReference: imageReference
       osDisk: {
-        name: '${replace(diskNamePrefix, '-${serviceName}', '')}-${padLeft((i + sessionHostIndex), 4, '0')}'
+        name: '${replace(diskNamePrefix, '-${serviceToken}', '')}-${padLeft((i + sessionHostIndex), 4, '0')}'
         osType: 'Windows'
         createOption: 'FromImage'
         caching: 'ReadWrite'
@@ -235,7 +229,7 @@ resource extension_IaasAntimalware 'Microsoft.Compute/virtualMachines/extensions
         time: '120' // When to perform the scheduled scan, measured in minutes from midnight (0-1440). For example: 0 = 12AM, 60 = 1AM, 120 = 2AM.
         scanType: 'Quick' //Indicates whether scheduled scan setting type is set to Quick or Full (default is Quick)
       }
-      Exclusions: fslogix ? {
+      Exclusions: deployFslogix ? {
         Paths: fslogixExclusions
       } : {}
     }
@@ -335,7 +329,7 @@ resource extension_CustomScriptExtension 'Microsoft.Compute/virtualMachines/exte
       timestamp: timestamp
     }
     protectedSettings: {
-      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File Set-SessionHostConfiguration.ps1 -activeDirectorySolution ${activeDirectorySolution} -amdVmSize ${amdVmSize} -avdAgentBootLoaderMsiName "${avdAgentBootLoaderMsiName}" -avdAgentMsiName "${avdAgentMsiName}" -Environment ${environment().name} -fslogix ${fslogix} -fslogixContainerType ${fslogixContainerType} -hostPoolName ${hostPoolName} -HostPoolRegistrationToken "${reference(resourceId(resourceGroupControlPlane, 'Microsoft.DesktopVirtualization/hostpools', hostPoolName), '2019-12-10-preview').registrationInfo.token}" -imageOffer ${imageOffer} -imagePublisher ${imagePublisher} -netAppFileShares ${netAppFileShares} -nvidiaVmSize ${nvidiaVmSize} -pooledHostPool ${pooledHostPool} -securityMonitoring ${securityMonitoring} -SecurityWorkspaceId ${securityMonitoring ? logAnalyticsWorkspace.properties.customerId : 'NotApplicable'} -securityWorkspaceKey "${securityWorkspaceKey}" -storageAccountPrefix ${storageAccountPrefix} -storageCount ${storageCount} -storageIndex ${storageIndex} -storageService ${storageService} -storageSuffix ${storageSuffix}'
+      commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File Set-SessionHostConfiguration.ps1 -activeDirectorySolution ${activeDirectorySolution} -amdVmSize ${amdVmSize} -avdAgentBootLoaderMsiName "${avdAgentBootLoaderMsiName}" -avdAgentMsiName "${avdAgentMsiName}" -Environment ${environment().name} -fslogix ${deployFslogix} -fslogixContainerType ${fslogixContainerType} -hostPoolName ${hostPoolName} -HostPoolRegistrationToken "${hostPool.listRegistrationTokens().value[0].token}" -imageOffer ${imageOffer} -imagePublisher ${imagePublisher} -netAppFileShares ${netAppFileShares} -nvidiaVmSize ${nvidiaVmSize} -pooledHostPool ${pooledHostPool} -storageAccountPrefix ${storageAccountPrefix} -storageCount ${storageCount} -storageIndex ${storageIndex} -storageService ${storageService} -storageSuffix ${storageSuffix} -uniqueToken ${uniqueToken}'
       managedidentity: {
         clientId: artifactsUserAssignedIdentityClientId
       }
@@ -349,7 +343,7 @@ resource extension_CustomScriptExtension 'Microsoft.Compute/virtualMachines/exte
 
 // Enables drain mode on the session hosts so users cannot login to hosts immediately after the deployment
 module drainMode '../common/customScriptExtensions.bicep' = if (enableDrainMode) {
-  name: 'CSE_DrainMode_${batchCount}_${timestamp}'
+  name: 'deploy-drain-mode-${batchCount}-${deploymentNameSuffix}'
   scope: resourceGroup(resourceGroupManagement)
   params: {
     fileUris: [

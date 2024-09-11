@@ -1,0 +1,135 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "artifactsUri": {
+      "value": ""
+    },
+    "activeDirectoryConnection": {
+      "value": ""
+    },
+    "activeDirectorySolution": {
+      "value": ""
+    },
+    "availability": {
+      "value": ""
+    },
+    "azureFilesPrivateDnsZoneResourceId": {
+      "value": ""
+    },
+    "delegatedSubnetId": {
+      "value": ""
+    },
+    "deploymentNameSuffix": {
+      "value": ""
+    },
+    "deploymentUserAssignedIdentityClientId": {
+      "value": ""
+    },
+    "dnsServers": {
+      "value": ""
+    },
+    "domainJoinPassword": {
+      "value": ""
+    },
+    "domainJoinUserPrincipalName": {
+      "value": ""
+    },
+    "domainName": {
+      "value": ""
+    },
+    "encryptionUserAssignedIdentityResourceId": {
+      "value": ""
+    },
+    "environmentAbbreviation": {
+      "value": ""
+    },
+    "fileShares": {
+      "value": []
+    },
+    "fslogixShareSizeInGB": {
+      "value": 0
+    },
+    "fslogixContainerType": {
+      "value": ""
+    },
+    "fslogixStorageService": {
+      "value": ""
+    },
+    "hostPoolType": {
+      "value": ""
+    },
+    "identifier": {
+      "value": ""
+    },
+    "keyVaultUri": {
+      "value": ""
+    },
+    "location": {
+      "value": ""
+    },
+    "managementVirtualMachineName": {
+      "value": ""
+    },
+    "mlzTags": {
+      "value": {}
+    },
+    "namingConvention": {
+      "value": {}
+    },
+    "netbios": {
+      "value": ""
+    },
+    "organizationalUnitPath": {
+      "value": ""
+    },
+    "recoveryServices": {
+      "value": false
+    },
+    "resourceGroupControlPlane": {
+      "value": ""
+    },
+    "resourceGroupManagement": {
+      "value": ""
+    },
+    "resourceGroupStorage": {
+      "value": ""
+    },
+    "securityPrincipalObjectIds": {
+      "value": []
+    },
+    "securityPrincipalNames": {
+      "value": []
+    },
+    "serviceToken": {
+      "value": ""
+    },
+    "smbServerLocation": {
+      "value": ""
+    },
+    "storageCount": {
+      "value": 0
+    },
+    "storageEncryptionKeyName": {
+      "value": ""
+    },
+    "storageIndex": {
+      "value": 0
+    },
+    "storageSku": {
+      "value": ""
+    },
+    "storageService": {
+      "value": ""
+    },
+    "subnetResourceId": {
+      "value": ""
+    },
+    "tags": {
+      "value": {}
+    },
+    "timeZone": {
+      "value": ""
+    }
+  }
+}

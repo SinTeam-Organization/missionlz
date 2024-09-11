@@ -5,7 +5,7 @@ param resourceGroupName string
 param runbookName string
 param storageAccountName string
 param subscriptionId string
-param timestamp string
+param timestamp string = utcNow('yyyyMMddHHmmss')
 
 resource automationAccount 'Microsoft.Automation/automationAccounts@2022-08-08' existing = {
   name: automationAccountName
@@ -13,6 +13,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2022-08-08' 
 
 resource jobSchedules_ProfileContainers 'Microsoft.Automation/automationAccounts/jobSchedules@2022-08-08' = [for i in range(0, 4): {
   parent: automationAccount
+  #disable-next-line use-stable-resource-identifiers
   name: guid(timestamp, runbookName, storageAccountName, 'ProfileContainers', string(i))
   properties: {
     parameters: {
@@ -34,6 +35,7 @@ resource jobSchedules_ProfileContainers 'Microsoft.Automation/automationAccounts
 
 resource jobSchedules_OfficeContainers 'Microsoft.Automation/automationAccounts/jobSchedules@2022-08-08' = [for i in range(0, 4): if (contains(fslogixContainerType, 'Office')) {
   parent: automationAccount
+  #disable-next-line use-stable-resource-identifiers
   name: guid(timestamp, runbookName, storageAccountName, 'OfficeContainers', string(i))
   properties: {
     parameters: {

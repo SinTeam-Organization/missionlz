@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.29.47.4906",
+      "templateHash": "7818929964664794039"
+    }
+  },
+  "resources": [],
+  "outputs": {
+    "token": {
+      "type": "string",
+      "value": "[listRegistrationTokens(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', '010ca3d8-1b48-4035-9750-dc6009796c51', 'avd-0-rg-controlPlane-avd-prod-va'), 'Microsoft.DesktopVirtualization/hostPools', 'avd-0-vdpool-avd-prod-va'), '2023-09-05').value[0].token]"
+    }
+  }
+}

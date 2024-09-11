@@ -3,9 +3,12 @@ param automationAccountName string
 param automationAccountNetworkInterfaceName string
 param automationAccountPrivateDnsZoneResourceId string
 param automationAccountPrivateEndpointName string
+param hostPoolName string
 param location string
 param logAnalyticsWorkspaceResourceId string
+param mlzTags object
 param monitoring bool
+param resourceGroupControlPlane string
 param subnetResourceId string
 param tags object
 param virtualMachineName string
@@ -17,7 +20,7 @@ resource virtualMachine 'Microsoft.Compute/virtualMachines@2023-07-01' existing 
 resource automationAccount 'Microsoft.Automation/automationAccounts@2021-06-22' = {
   name: automationAccountName
   location: location
-  tags: contains(tags, 'Microsoft.Automation/automationAccounts') ? tags['Microsoft.Automation/automationAccounts'] : {}
+  tags: union({'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'}, contains(tags, 'Microsoft.Automation/automationAccounts') ? tags['Microsoft.Automation/automationAccounts'] : {}, mlzTags)
   identity: {
     type: 'SystemAssigned'
   }
@@ -31,7 +34,7 @@ resource automationAccount 'Microsoft.Automation/automationAccounts@2021-06-22' 
 resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-04-01' = {
   name: automationAccountPrivateEndpointName
   location: location
-  tags: contains(tags, 'Microsoft.Network/privateEndpoints') ? tags['Microsoft.Network/privateEndpoints'] : {}
+  tags: union({'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'}, contains(tags, 'Microsoft.Network/privateEndpoints') ? tags['Microsoft.Network/privateEndpoints'] : {}, mlzTags)
   properties: {
     customNetworkInterfaceName: automationAccountNetworkInterfaceName
     privateLinkServiceConnections: [
@@ -83,7 +86,7 @@ resource extension_HybridWorker 'Microsoft.Compute/virtualMachines/extensions@20
   parent: virtualMachine
   name: 'HybridWorkerForWindows'
   location: location
-  tags: contains(tags, 'Microsoft.Compute/virtualMachines') ? tags['Microsoft.Compute/virtualMachines'] : {}
+  tags: union({'cm-resource-parent': '${subscription().id}}/resourceGroups/${resourceGroupControlPlane}/providers/Microsoft.DesktopVirtualization/hostpools/${hostPoolName}'}, contains(tags, 'Microsoft.Compute/virtualMachines') ? tags['Microsoft.Compute/virtualMachines'] : {}, mlzTags)
   properties: {
     publisher: 'Microsoft.Azure.Automation.HybridWorker'
     type: 'HybridWorkerForWindows'
@@ -119,4 +122,5 @@ resource diagnosticSetting 'Microsoft.Insights/diagnosticsettings@2017-05-01-pre
   }
 }
 
+output name string = automationAccount.name
 output hybridRunbookWorkerGroupName string = hybridRunbookWorkerGroup.name
